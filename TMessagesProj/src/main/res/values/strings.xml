@@ -4320,4 +4320,9 @@
     <string name="SwipeUnpin">Unpin</string>
     <string name="SwipePin">Pin</string>
     <string name="CancelForwarding">Cancel Forwarding</string>
+    <!-- animation editor -->
+    <string name="AnimationSettings">Animation Settings</string>
+    <string name="ShareParameters">Share Parameters</string>
+    <string name="ImportParameters">Import Parameters</string>
+    <string name="RestoreToDefault">Restore to Default</string>
 </resources>

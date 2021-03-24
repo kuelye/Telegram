@@ -50,6 +50,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.ColorInt;
 import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -387,9 +388,13 @@ public class ActionBarMenuItem extends FrameLayout {
     }
 
     public TextView addSubItem(int id, CharSequence text) {
+        return addSubItem(id, text, Theme.getColor(Theme.key_actionBarDefaultSubmenuItem));
+    }
+
+    public TextView addSubItem(int id, CharSequence text, @ColorInt int textColor) {
         createPopupLayout();
         TextView textView = new TextView(getContext());
-        textView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem));
+        textView.setTextColor(textColor);
         textView.setBackgroundDrawable(Theme.getSelectorDrawable(false));
         if (!LocaleController.isRTL) {
             textView.setGravity(Gravity.CENTER_VERTICAL);
