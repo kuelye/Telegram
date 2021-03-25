@@ -4325,4 +4325,13 @@
     <string name="ShareParameters">Share Parameters</string>
     <string name="ImportParameters">Import Parameters</string>
     <string name="RestoreToDefault">Restore to Default</string>
+    <string name="AnimationBackground">Background</string>
+    <string name="AnimationShortText">Short Text</string>
+    <string name="AnimationLongText">Long Text</string>
+    <string name="AnimationLink">Link</string>
+    <string name="AnimationEmoji">Emoji</string>
+    <string name="AnimationPhoto">Photo</string>
+    <string name="AnimationSticker">Sticker</string>
+    <string name="AnimationVoice">Voice</string>
+    <string name="AnimationVideo">Video</string>
 </resources>
