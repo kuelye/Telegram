@@ -4334,4 +4334,12 @@
     <string name="AnimationSticker">Sticker</string>
     <string name="AnimationVoice">Voice</string>
     <string name="AnimationVideo">Video</string>
+    <string name="AnimationSendMessage">Send Message</string>
+    <string name="AnimationBackgroundPreview">Background Preview</string>
+    <string name="AnimationOpenFullScreen">Open Full Screen</string>
+    <string name="AnimationColors">Colors</string>
+    <string name="AnimationColor">Color %d</string>
+    <string name="AnimationOpenChat">Open Chat</string>
+    <string name="AnimationJumpToMessage">Jump to Message</string>
+    <string name="AnimationDuration">Duration</string>
 </resources>

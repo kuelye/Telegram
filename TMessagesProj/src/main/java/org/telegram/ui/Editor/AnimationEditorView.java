@@ -1,7 +1,7 @@
 package org.telegram.ui.Editor;
 
 import android.content.Context;
-import android.util.Log;
+import android.graphics.Color;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +27,7 @@ public class AnimationEditorView extends LinearLayout {
     public AnimationEditorView(Context context) {
         super(context);
         setOrientation(LinearLayout.VERTICAL);
+        setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
 
         // tabs
         tabsView = new FilterTabsView(context);
@@ -150,12 +151,8 @@ public class AnimationEditorView extends LinearLayout {
         public Object instantiateItem(@NonNull ViewGroup container, int position) {
             View view = views[position];
             if (view == null) {
-                if (position == 0) {
-                    view = new BackgroundAnimationEditorView(context);
-                } else {
-                    view = new DefaultAnimationEditorView(context, AnimationType.values()[position]);
-                }
-                view.setBackgroundColor((int) (Math.random() * 0x1000000) + 0xFF000000);
+                AnimationType animationType = AnimationType.values()[position];
+                view = new AnimationEditorPageView(context, animationType.getSettingTypes());
                 views[position] = view;
             }
             container.addView(view, 0);
