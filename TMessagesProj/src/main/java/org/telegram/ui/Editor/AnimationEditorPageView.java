@@ -1,9 +1,11 @@
 package org.telegram.ui.Editor;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -33,6 +35,9 @@ public class AnimationEditorPageView extends RecyclerListView {
         setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false));
         Adapter adapter = new Adapter();
         setAdapter(adapter);
+        setOnItemClickListener((view, position, x, y) -> {
+            getItem(position).click(view);
+        });
 
         // add items
         for (int i = 0, l = settingTypes.length; i < l; ++i) {
@@ -45,7 +50,9 @@ public class AnimationEditorPageView extends RecyclerListView {
                     break;
                 case COLORS:
                     for (int j = 1; j <= 4; ++j) {
-                        items.add(new TextColorItem(j));
+                        items.add(new TextColorItem(j, Color.BLACK, color -> {
+                            // TODO
+                        }));
                     }
                     break;
                 case INTERPOLATOR:
@@ -56,6 +63,10 @@ public class AnimationEditorPageView extends RecyclerListView {
             items.add(new ShadowItem(i == l - 1));
         }
         adapter.notifyDataSetChanged();
+    }
+
+    private BaseItem getItem(int position) {
+        return items.get(position);
     }
 
     private class Adapter extends RecyclerListView.SelectionAdapter {
@@ -86,10 +97,6 @@ public class AnimationEditorPageView extends RecyclerListView {
         @Override
         public boolean isEnabled(ViewHolder holder) {
             return getItem(holder.getAdapterPosition()).isEnabled();
-        }
-
-        private BaseItem getItem(int position) {
-            return items.get(position);
         }
     }
 
@@ -144,6 +151,7 @@ public class AnimationEditorPageView extends RecyclerListView {
         }
 
         abstract void bind(Context context, View view);
+        void click(View view) {}
 
         int getViewType() {
             return viewType;
@@ -243,16 +251,29 @@ public class AnimationEditorPageView extends RecyclerListView {
     private static class TextColorItem extends BaseItem {
 
         private final int id;
+        @ColorInt private int color;
+        private final AnimationTextColorCell.ApplyDelegate delegate;
 
-        TextColorItem(int id) {
+        TextColorItem(int id, int color, AnimationTextColorCell.ApplyDelegate delegate) {
             super(TEXT_COLOR_CELL);
             this.id = id;
+            this.color = color;
+            this.delegate = delegate;
+            setEnabled(true);
         }
 
         @Override
         void bind(Context context, View view) {
             AnimationTextColorCell cell = (AnimationTextColorCell) view;
+            cell.setColor(color);
             cell.setText(String.format(LocaleController.getString("AnimationColor", R.string.AnimationColor), id), true);
+            cell.setDelegate(delegate);
+        }
+
+        @Override
+        void click(View view) {
+            AnimationTextColorCell cell = (AnimationTextColorCell) view;
+            cell.showPicker();
         }
     }
 

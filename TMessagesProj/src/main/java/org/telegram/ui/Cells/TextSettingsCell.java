@@ -32,7 +32,7 @@ import java.util.ArrayList;
 public class TextSettingsCell extends FrameLayout {
 
     private TextView textView;
-    private TextView valueTextView;
+    protected TextView valueTextView;
     private ImageView valueImageView;
     private boolean needDivider;
     private boolean canDisable;
@@ -117,15 +117,19 @@ public class TextSettingsCell extends FrameLayout {
         setWillNotDraw(!divider);
     }
 
-    public void setTextAndValue(String text, String value, boolean divider) {
-        textView.setText(text);
-        valueImageView.setVisibility(INVISIBLE);
+    public void setValue(String value) {
         if (value != null) {
             valueTextView.setText(value);
             valueTextView.setVisibility(VISIBLE);
         } else {
             valueTextView.setVisibility(INVISIBLE);
         }
+    }
+
+    public void setTextAndValue(String text, String value, boolean divider) {
+        textView.setText(text);
+        valueImageView.setVisibility(INVISIBLE);
+        setValue(value);
         needDivider = divider;
         setWillNotDraw(!divider);
         requestLayout();

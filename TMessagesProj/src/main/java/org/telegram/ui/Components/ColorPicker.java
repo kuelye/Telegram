@@ -51,6 +51,7 @@ public class ColorPicker extends FrameLayout {
     private Paint valueSliderPaint;
     private Paint circlePaint;
     private Paint linePaint;
+    private Paint fillPaint;
     private Paint editTextCirclePaint;
     private Drawable circleDrawable;
 
@@ -65,6 +66,7 @@ public class ColorPicker extends FrameLayout {
     private int selectedEditText;
 
     private EditTextBoldCursor[] colorEditText = new EditTextBoldCursor[4];
+    private LinearLayout headerLayout;
     private ImageView clearButton;
     private ImageView exchangeButton;
     private TextView resetButton;
@@ -96,6 +98,8 @@ public class ColorPicker extends FrameLayout {
     private static final int item_share = 2;
     private static final int item_delete = 3;
 
+    private Integer internalBackgroundColor;
+
     public ColorPicker(Context context, boolean hasMenu, ColorPickerDelegate colorPickerDelegate) {
         super(context);
 
@@ -111,10 +115,11 @@ public class ColorPicker extends FrameLayout {
         editTextCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         linePaint = new Paint();
         linePaint.setColor(0x12000000);
+        fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        LinearLayout linearLayout = new LinearLayout(context);
-        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
-        addView(linearLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 54, Gravity.LEFT | Gravity.TOP, 22, 0, 22, 0));
+        headerLayout = new LinearLayout(context);
+        headerLayout.setOrientation(LinearLayout.HORIZONTAL);
+        addView(headerLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 54, Gravity.LEFT | Gravity.TOP, 22, 0, 22, 0));
         for (int a = 0; a < 4; a++) {
             final int num = a;
             if (a == 0 || a == 2) {
@@ -151,7 +156,7 @@ public class ColorPicker extends FrameLayout {
                 colorEditText[a].setText("#");
                 colorEditText[a].setEnabled(false);
                 colorEditText[a].setFocusable(false);
-                linearLayout.addView(colorEditText[a], LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, a == 2 ? 39 : 0, 0, 0, 0));
+                headerLayout.addView(colorEditText[a], LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, a == 2 ? 39 : 0, 0, 0, 0));
             } else {
                 colorEditText[a] = new EditTextBoldCursor(context) {
                     @Override
@@ -185,7 +190,7 @@ public class ColorPicker extends FrameLayout {
                 colorEditText[a].setFilters(new InputFilter[]{new InputFilter.LengthFilter(6)});
                 colorEditText[a].setPadding(0, AndroidUtilities.dp(5), 0, AndroidUtilities.dp(18));
                 colorEditText[a].setHint("8BC6ED");
-                linearLayout.addView(colorEditText[a], LayoutHelper.createLinear(71, LayoutHelper.MATCH_PARENT));
+                headerLayout.addView(colorEditText[a], LayoutHelper.createLinear(71, LayoutHelper.MATCH_PARENT));
                 colorEditText[a].addTextChangedListener(new TextWatcher() {
                     @Override
                     public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
@@ -410,9 +415,14 @@ public class ColorPicker extends FrameLayout {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawBitmap(colorWheelBitmap, 0, AndroidUtilities.dp(54), null);
-        int y = AndroidUtilities.dp(54) + colorWheelBitmap.getHeight();
-        canvas.drawRect(0, AndroidUtilities.dp(54), getMeasuredWidth(), AndroidUtilities.dp(54) + 1, linePaint);
+        int colorWheelTop = getColorWheelTop();
+        if (internalBackgroundColor != null) {
+            fillPaint.setColor(internalBackgroundColor);
+            canvas.drawRect(0, colorWheelTop, colorWheelWidth, colorWheelTop + colorWheelBitmap.getHeight() + AndroidUtilities.dp(60), fillPaint);
+        }
+        canvas.drawBitmap(colorWheelBitmap, 0, colorWheelTop, null);
+        int y = colorWheelTop + colorWheelBitmap.getHeight();
+        canvas.drawRect(0, colorWheelTop, getMeasuredWidth(), colorWheelTop + 1, linePaint);
         canvas.drawRect(0, y - 1, getMeasuredWidth(), y, linePaint);
 
         hsvTemp[0] = colorHSV[0];
@@ -420,7 +430,7 @@ public class ColorPicker extends FrameLayout {
         hsvTemp[2] = 1f;
 
         int colorPointX = (int) (colorHSV[0] * getMeasuredWidth() / 360);
-        int colorPointY = (int) (AndroidUtilities.dp(54) + (colorWheelBitmap.getHeight() * (1.0f - colorHSV[1])));
+        int colorPointY = (int) (colorWheelTop + (colorWheelBitmap.getHeight() * (1.0f - colorHSV[1])));
         if (!circlePressed) {
             int minD = AndroidUtilities.dp(16);
             float progress = CubicBezierInterpolator.EASE_OUT.getInterpolation(pressedMoveProgress);
@@ -429,10 +439,10 @@ public class ColorPicker extends FrameLayout {
             } else if (colorPointX > getMeasuredWidth() - minD) {
                 colorPointX -= progress * (colorPointX - (getMeasuredWidth() - minD));
             }
-            if (colorPointY < AndroidUtilities.dp(54) + minD) {
-                colorPointY += progress * (AndroidUtilities.dp(54) + minD - colorPointY);
-            } else if (colorPointY > AndroidUtilities.dp(54) + colorWheelBitmap.getHeight() - minD) {
-                colorPointY -= progress * (colorPointY - (AndroidUtilities.dp(54) + colorWheelBitmap.getHeight() - minD));
+            if (colorPointY < colorWheelTop + minD) {
+                colorPointY += progress * (colorWheelTop + minD - colorPointY);
+            } else if (colorPointY > colorWheelTop + colorWheelBitmap.getHeight() - minD) {
+                colorPointY -= progress * (colorPointY - (colorWheelTop + colorWheelBitmap.getHeight() - minD));
             }
         }
         drawPointerArrow(canvas, colorPointX, colorPointY, Color.HSVToColor(hsvTemp), false);
@@ -514,8 +524,8 @@ public class ColorPicker extends FrameLayout {
             case MotionEvent.ACTION_MOVE:
                 int x = (int) event.getX();
                 int y = (int) event.getY();
-
-                if (circlePressed || !colorPressed && y >= AndroidUtilities.dp(54) && y <= AndroidUtilities.dp(54) + colorWheelBitmap.getHeight()) {
+                int colorWheelTop = getColorWheelTop();
+                if (circlePressed || !colorPressed && y >= colorWheelTop && y <= colorWheelTop + colorWheelBitmap.getHeight()) {
                     if (!circlePressed) {
                         getParent().requestDisallowInterceptTouchEvent(true);
                     }
@@ -524,11 +534,11 @@ public class ColorPicker extends FrameLayout {
                     lastUpdateTime = SystemClock.elapsedRealtime();
 
                     x = Math.max(0, Math.min(x, colorWheelBitmap.getWidth()));
-                    y = Math.max(AndroidUtilities.dp(54), Math.min(y, AndroidUtilities.dp(54) + colorWheelBitmap.getHeight()));
+                    y = Math.max(colorWheelTop, Math.min(y, colorWheelTop + colorWheelBitmap.getHeight()));
 
                     float oldBrightnessPos = minHsvBrightness == maxHsvBrightness ? 0.5f : (getBrightness() - minHsvBrightness) / (maxHsvBrightness - minHsvBrightness);
                     colorHSV[0] = x * 360f / colorWheelBitmap.getWidth();
-                    colorHSV[1] = 1.0f - (1.0f / colorWheelBitmap.getHeight() * (y - AndroidUtilities.dp(54)));
+                    colorHSV[1] = 1.0f - (1.0f / colorWheelBitmap.getHeight() * (y - colorWheelTop));
                     updateHsvMinMaxBrightness();
                     colorHSV[2] = minHsvBrightness * (1 - oldBrightnessPos) + maxHsvBrightness * oldBrightnessPos;
                     colorGradient = null;
@@ -793,6 +803,15 @@ public class ColorPicker extends FrameLayout {
         }
     }
 
+    public void setHeaderVisible(boolean visible) {
+        headerLayout.setVisibility(visible ? VISIBLE : GONE);
+        invalidate();
+    }
+
+    public void setInternalBackgroundColor(int color) {
+        internalBackgroundColor = color;
+    }
+
     public interface ColorPickerDelegate {
         void setColor(int color, int num, boolean applyNow);
 
@@ -831,5 +850,9 @@ public class ColorPicker extends FrameLayout {
             hsv[0] += 20;
         }
         return Color.HSVToColor(255, hsv);
+    }
+
+    private int getColorWheelTop() {
+        return headerLayout.getVisibility() == VISIBLE ? AndroidUtilities.dp(54) : AndroidUtilities.dp(16);
     }
 }

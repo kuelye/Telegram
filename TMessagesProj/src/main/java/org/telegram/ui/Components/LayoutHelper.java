@@ -10,6 +10,8 @@ package org.telegram.ui.Components;
 
 import android.annotation.SuppressLint;
 import android.view.Gravity;
+import android.view.View;
+import android.view.View.MeasureSpec;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -209,4 +211,14 @@ public class LayoutHelper {
     }
 
     //endregion
+
+    //region MeasureSpec
+
+    public static int measureExactly(int size) {
+        return MeasureSpec.makeMeasureSpec(size, MeasureSpec.EXACTLY);
+    }
+
+    public static int measureExactlySpec(int measureSpec) {
+        return MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(measureSpec), MeasureSpec.EXACTLY);
+    }
 }

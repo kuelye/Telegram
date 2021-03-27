@@ -123,6 +123,7 @@ public class BottomSheet extends Dialog {
     protected boolean allowNestedScroll = true;
 
     protected Drawable shadowDrawable;
+    private boolean applyShadowDrawable = true;
     protected int backgroundPaddingTop;
     protected int backgroundPaddingLeft;
 
@@ -820,7 +821,9 @@ public class BottomSheet extends Dialog {
                     onContainerTranslationYChanged(translationY);
                 }
             };
-            containerView.setBackgroundDrawable(shadowDrawable);
+            if (applyShadowDrawable) {
+                containerView.setBackgroundDrawable(shadowDrawable);
+            }
             containerView.setPadding(backgroundPaddingLeft, (applyTopPadding ? AndroidUtilities.dp(8) : 0) + backgroundPaddingTop - 1, backgroundPaddingLeft, (applyBottomPadding ? AndroidUtilities.dp(8) : 0));
         }
         containerView.setVisibility(View.INVISIBLE);
@@ -1381,6 +1384,11 @@ public class BottomSheet extends Dialog {
 
         public Builder setDelegate(BottomSheetDelegate delegate) {
             bottomSheet.setDelegate(delegate);
+            return this;
+        }
+
+        public Builder setApplyShadowDrawable(boolean value) {
+            bottomSheet.applyShadowDrawable = value;
             return this;
         }
 
