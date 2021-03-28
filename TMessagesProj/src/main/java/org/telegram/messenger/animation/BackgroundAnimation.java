@@ -6,7 +6,8 @@ import org.telegram.messenger.R;
 
 public class BackgroundAnimation extends BaseAnimation {
 
-    private final static int[] DEFAULT_COLORS = { 0xFFFFF3BD, 0xFF739975, 0xFFFADF71, 0xFF2C624B };
+    public final static int COLORS_COUNT = 4;
+    private final static int[] DEFAULT_COLORS = { 0xFFFADF71, 0xFF2C624B, 0xFFFFF3BD, 0xFF739975 };
 
     private final int[] colors = DEFAULT_COLORS;
 
@@ -44,10 +45,6 @@ public class BackgroundAnimation extends BaseAnimation {
             super("AnimationBackgroundPreview", R.string.AnimationBackgroundPreview, ContentType.COLORS);
         }
 
-        public int getColorsCount() {
-            return DEFAULT_COLORS.length;
-        }
-
         @ColorInt
         public int getColor(BaseAnimation animation, int id) {
             return ((BackgroundAnimation) animation).getColor(id);
@@ -55,6 +52,7 @@ public class BackgroundAnimation extends BaseAnimation {
 
         public void setColor(BaseAnimation animation, int id, @ColorInt int color) {
             ((BackgroundAnimation) animation).setColor(id, color);
+            AnimationController.emitAnimationChange(AnimationType.BACKGROUND);
         }
     }
 }
