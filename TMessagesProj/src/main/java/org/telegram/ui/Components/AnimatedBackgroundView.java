@@ -52,6 +52,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+        cancelAnimation();
         AnimationController.removeOnAnimationChangedListener(AnimationType.BACKGROUND, this);
     }
 
@@ -82,6 +83,13 @@ public class AnimatedBackgroundView extends View implements AnimationController.
             invalidate();
         });
         valueAnimator.start();
+    }
+
+    public void cancelAnimation() {
+        if (valueAnimator != null) {
+            valueAnimator.cancel();
+            valueAnimator = null;
+        }
     }
 
     private void updateAnimation() {
