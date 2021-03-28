@@ -1,10 +1,12 @@
 package org.telegram.ui.Components;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
+import android.util.Log;
 import android.view.View;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -23,6 +25,9 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     private final Paint fillPaint;
     private final Paint strokePaint;
     private BackgroundAnimation animation;
+
+    private ValueAnimator valueAnimator;
+    private float state = 0f;
 
     public AnimatedBackgroundView(Context context) {
         super(context);
@@ -53,10 +58,11 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     @Override
     protected void onDraw(Canvas canvas) {
         float radius = canvas.getWidth() * RADIUS_FACTOR;
-        for (int i = 0; i < BackgroundAnimation.COLORS_COUNT; ++i) {
+        for (int i = 0; i < BackgroundAnimation.POINTS_COUNT; ++i) {
             fillPaint.setColor(animation.getColor(i));
-            float x = canvas.getWidth() * DEFAULT_POINTS[i].x;
-            float y = canvas.getHeight() * DEFAULT_POINTS[i].y;
+            PointF point = getPoint(i);
+            float x = canvas.getWidth() * point.x;
+            float y = canvas.getHeight() * point.y;
             canvas.drawCircle(x, y, radius, fillPaint);
             canvas.drawCircle(x, y, radius, strokePaint);
         }
@@ -68,11 +74,35 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     }
 
     public void animate(Interpolator interpolator) {
-        // TODO
+        if (valueAnimator != null && valueAnimator.isRunning()) return;
+        float startState = state;
+        valueAnimator = ValueAnimator.ofFloat(0.0f, 0.5f).setDuration(1000);
+        valueAnimator.addUpdateListener(animation -> {
+            state = startState + (float) animation.getAnimatedValue();
+            invalidate();
+        });
+        valueAnimator.start();
     }
 
     private void updateAnimation() {
         animation = AnimationController.getBackgroundAnimation();
         invalidate();
+    }
+
+    private PointF getPoint(int i) {
+        int s = (int) Math.floor(state * 2) / 2;
+        float f = Math.abs(state - s);
+        int fromI = clip(i - s);
+        int toI = clip(fromI - 1);
+        return new PointF(
+            AndroidUtilities.lerp(DEFAULT_POINTS[fromI].x, DEFAULT_POINTS[toI].x, f),
+            AndroidUtilities.lerp(DEFAULT_POINTS[fromI].y, DEFAULT_POINTS[toI].y, f)
+        );
+    }
+
+    private int clip(int i) {
+        i = i % BackgroundAnimation.POINTS_COUNT;
+        if (i < 0) i += BackgroundAnimation.POINTS_COUNT;
+        return i;
     }
 }

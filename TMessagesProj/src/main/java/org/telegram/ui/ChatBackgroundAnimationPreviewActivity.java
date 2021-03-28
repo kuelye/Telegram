@@ -101,7 +101,7 @@ public class ChatBackgroundAnimationPreviewActivity extends BaseChatAnimationAct
                 view.setTextColor(Theme.getColor(Theme.key_dialogButton));
                 view.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
                 view.setBackgroundDrawable(Theme.getRoundRectSelectorDrawable(Theme.getColor(Theme.key_dialogButton)));
-                view.setOnClickListener(v -> backgroundView.animate());
+                view.setOnClickListener(v -> backgroundView.animate(null));
                 container.addView(view, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 44));
                 return container;
             }

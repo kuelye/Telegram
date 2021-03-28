@@ -56,7 +56,7 @@ public class AnimationEditorPageView extends RecyclerListView {
                     break;
                 case COLORS:
                     BackgroundAnimation.BackgroundColorsAnimationSetting colorsSetting = (BackgroundAnimation.BackgroundColorsAnimationSetting) setting;
-                    for (int id = 0; id < BackgroundAnimation.COLORS_COUNT; ++id) {
+                    for (int id = 0; id < BackgroundAnimation.POINTS_COUNT; ++id) {
                         final int finalId = id;
                         items.add(new TextColorItem(id + 1, colorsSetting.getColor(animation, id), color -> {
                             colorsSetting.setColor(animation, finalId, color);

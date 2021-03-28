@@ -6,8 +6,8 @@ import org.telegram.messenger.R;
 
 public class BackgroundAnimation extends BaseAnimation {
 
-    public final static int COLORS_COUNT = 4;
-    private final static int[] DEFAULT_COLORS = { 0xFFFADF71, 0xFF2C624B, 0xFFFFF3BD, 0xFF739975 };
+    public final static int POINTS_COUNT = 4;
+    private final static int[] DEFAULT_COLORS = { 0xFFFFF3BD, 0xFF739975, 0xFFFADF71, 0xFF2C624B };
 
     private final int[] colors = DEFAULT_COLORS;
 
