@@ -1,4 +1,4 @@
-package org.telegram.ui.Editor;
+package org.telegram.ui.Cells;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -19,13 +19,12 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.ColorPicker;
 import org.telegram.ui.Components.LayoutHelper;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 
-public class AnimationTextColorCell extends TextSettingsCell {
+public class TextColorPickerCell extends TextSettingsCell {
 
     private final static int DEFAULT_COLOR = Color.BLACK;
 
@@ -34,9 +33,9 @@ public class AnimationTextColorCell extends TextSettingsCell {
     private final RectF rect = new RectF();
     private final Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    private ApplyDelegate delegate;
+    private OnColorAppliedListener onColorAppliedListener;
 
-    public AnimationTextColorCell(Context context) {
+    public TextColorPickerCell(Context context) {
         super(context);
         setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         setColor(DEFAULT_COLOR);
@@ -66,14 +65,14 @@ public class AnimationTextColorCell extends TextSettingsCell {
 
     public void setColor(@ColorInt int color, boolean internal) {
         this.color = color;
-        if (internal && delegate != null) {
-            delegate.onApply(color);
+        if (internal && onColorAppliedListener != null) {
+            onColorAppliedListener.onColorApplied(color);
         }
         updateColor();
     }
 
-    public void setDelegate(ApplyDelegate delegate) {
-        this.delegate = delegate;
+    public void setOnColorAppliedListener(OnColorAppliedListener listener) {
+        onColorAppliedListener = listener;
     }
 
     public void showPicker() {
@@ -137,7 +136,7 @@ public class AnimationTextColorCell extends TextSettingsCell {
         valueTextView.setTextColor(Theme.getColor(hsv[2] < 0.5f ? Theme.key_windowBackgroundWhite :Theme.key_windowBackgroundWhiteBlackText));
     }
 
-    interface ApplyDelegate {
-        void onApply(@ColorInt int color);
+    public interface OnColorAppliedListener {
+        void onColorApplied(@ColorInt int color);
     }
 }

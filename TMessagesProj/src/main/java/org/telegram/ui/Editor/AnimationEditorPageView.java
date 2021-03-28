@@ -16,11 +16,14 @@ import org.telegram.messenger.animation.AnimationType;
 import org.telegram.messenger.animation.BackgroundAnimation;
 import org.telegram.messenger.animation.BaseAnimation;
 import org.telegram.messenger.animation.BaseAnimationSetting;
+import org.telegram.messenger.animation.Interpolator;
+import org.telegram.messenger.animation.InterpolatorAnimationSetting;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
-import org.telegram.ui.Cells.TextSettingsCell;
+import org.telegram.ui.Cells.TextColorPickerCell;
+import org.telegram.ui.Cells.TextSpinnerCell;
 import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
@@ -64,7 +67,21 @@ public class AnimationEditorPageView extends RecyclerListView {
                     }
                     break;
                 case INTERPOLATOR:
-                    items.add(new TextSpinnerItem(LocaleController.getString("AnimationDuration", R.string.AnimationDuration), "1000ms"));
+                    InterpolatorAnimationSetting interpolatorSetting = (InterpolatorAnimationSetting) setting;
+                    Interpolator interpolator = animation.getInterpolator(interpolatorSetting.getInterpolatorId());
+                    TextSpinnerCell.Item[] durationItems = new TextSpinnerCell.Item[Interpolator.DURATIONS.length];
+                    TextSpinnerCell.Item selectedItem = null;
+                    for (int j = 0, c = Interpolator.DURATIONS.length; j < c; ++j) {
+                        int duration = Interpolator.DURATIONS[j];
+                        TextSpinnerCell.Item item = new TextSpinnerCell.Item(duration, LocaleController.formatString("AnimationDurationTemplate", R.string.AnimationDurationTemplate, duration));
+                        if (duration == interpolator.getDuration()) {
+                            selectedItem = item;
+                        }
+                        durationItems[j] = item;
+                    }
+                    items.add(new TextSpinnerItem(LocaleController.getString("AnimationDuration", R.string.AnimationDuration), durationItems, selectedItem, item -> {
+                        interpolator.setDuration(item.getValue());
+                    }));
                     items.add(new InterpolatorItem());
                     break;
             }
@@ -110,13 +127,13 @@ public class AnimationEditorPageView extends RecyclerListView {
 
     private static abstract class BaseItem {
 
-        final static int HEADER_CELL = 0;
-        final static int SHADOW_CELL = 1;
-        final static int TEXT_CELL = 2;
-        final static int TEXT_SPINNER_CELL = 3;
-        final static int BACKGROUND_CELL = 4;
-        final static int TEXT_COLOR_CELL = 5;
-        final static int INTERPOLATOR_CELL = 6;
+        final static int HEADER = 0;
+        final static int SHADOW = 1;
+        final static int TEXT = 2;
+        final static int TEXT_SPINNER = 3;
+        final static int BACKGROUND = 4;
+        final static int TEXT_COLOR_PICKER = 5;
+        final static int INTERPOLATOR = 6;
 
         private final int viewType;
         private boolean isEnabled;
@@ -128,28 +145,28 @@ public class AnimationEditorPageView extends RecyclerListView {
         static View create(Context context, int viewType) {
             View view;
             switch (viewType) {
-                case HEADER_CELL:
+                case HEADER:
                     view = new HeaderCell(context);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
-                case SHADOW_CELL:
+                case SHADOW:
                     view = new ShadowSectionCell(context);
                     break;
-                case TEXT_CELL:
+                case TEXT:
                     view = new TextCell(context);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
-                case TEXT_SPINNER_CELL:
-                    view = new TextSettingsCell(context);
+                case TEXT_SPINNER:
+                    view = new TextSpinnerCell(context);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
-                case BACKGROUND_CELL:
+                case BACKGROUND:
                     view = new AnimationBackgroundCell(context);
                     break;
-                case TEXT_COLOR_CELL:
-                    view = new AnimationTextColorCell(context);
+                case TEXT_COLOR_PICKER:
+                    view = new TextColorPickerCell(context);
                     break;
-                case INTERPOLATOR_CELL:
+                case INTERPOLATOR:
                     view = new AnimationInterpolatorCell(context);
                     break;
                 default:
@@ -179,7 +196,7 @@ public class AnimationEditorPageView extends RecyclerListView {
         private final String title;
 
         HeaderItem(String title) {
-            super(HEADER_CELL);
+            super(HEADER);
             this.title = title;
         }
 
@@ -194,7 +211,7 @@ public class AnimationEditorPageView extends RecyclerListView {
         private final boolean isBottom;
 
         ShadowItem(boolean isBottom) {
-            super(SHADOW_CELL);
+            super(SHADOW);
             this.isBottom = isBottom;
         }
 
@@ -214,7 +231,7 @@ public class AnimationEditorPageView extends RecyclerListView {
         private final OnClickListener listener;
 
         TextItem(String title, OnClickListener listener) {
-            super(TEXT_CELL);
+            super(TEXT);
             this.title = title;
             this.listener = listener;
 
@@ -239,26 +256,43 @@ public class AnimationEditorPageView extends RecyclerListView {
     private static class TextSpinnerItem extends BaseItem {
 
         private final String title;
-        private final String value;
+        private final TextSpinnerCell.Item[] items;
+        private TextSpinnerCell.Item selectedItem;
+        private final TextSpinnerCell.OnItemSelectedListener listener;
 
-        TextSpinnerItem(String title, String value) {
-            super(TEXT_SPINNER_CELL);
+        TextSpinnerItem(String title, TextSpinnerCell.Item[] items, TextSpinnerCell.Item selectedItem, TextSpinnerCell.OnItemSelectedListener listener) {
+            super(TEXT_SPINNER);
             this.title = title;
-            this.value = value;
+            this.items = items;
+            this.selectedItem = selectedItem;
+            this.listener = listener;
+            setEnabled(true);
         }
 
         @Override
         void bind(Context context, View view) {
-            TextSettingsCell cell = (TextSettingsCell) view;
+            TextSpinnerCell cell = (TextSpinnerCell) view;
             cell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
-            cell.setTextAndValue(title, value, true);
+            cell.setText(title, true);
+            cell.swapItems(items);
+            cell.setSelectedItem(selectedItem);
+            cell.setOnItemSelectedListener(item -> {
+                selectedItem = item;
+                listener.onItemSelected(item);
+            });
+        }
+
+        @Override
+        void click(View view) {
+            TextSpinnerCell cell = (TextSpinnerCell) view;
+            cell.showPopup();
         }
     }
 
     private static class BackgroundItem extends BaseItem {
 
         BackgroundItem() {
-            super(BACKGROUND_CELL);
+            super(BACKGROUND);
         }
 
         @Override
@@ -271,27 +305,27 @@ public class AnimationEditorPageView extends RecyclerListView {
 
         private final int id;
         @ColorInt private int color;
-        private final AnimationTextColorCell.ApplyDelegate delegate;
+        private final TextColorPickerCell.OnColorAppliedListener listener;
 
-        TextColorItem(int id, int color, AnimationTextColorCell.ApplyDelegate delegate) {
-            super(TEXT_COLOR_CELL);
+        TextColorItem(int id, int color, TextColorPickerCell.OnColorAppliedListener listener) {
+            super(TEXT_COLOR_PICKER);
             this.id = id;
             this.color = color;
-            this.delegate = delegate;
+            this.listener = listener;
             setEnabled(true);
         }
 
         @Override
         void bind(Context context, View view) {
-            AnimationTextColorCell cell = (AnimationTextColorCell) view;
+            TextColorPickerCell cell = (TextColorPickerCell) view;
             cell.setColor(color);
             cell.setText(String.format(LocaleController.getString("AnimationColor", R.string.AnimationColor), id), true);
-            cell.setDelegate(delegate);
+            cell.setOnColorAppliedListener(listener);
         }
 
         @Override
         void click(View view) {
-            AnimationTextColorCell cell = (AnimationTextColorCell) view;
+            TextColorPickerCell cell = (TextColorPickerCell) view;
             cell.showPicker();
         }
     }
@@ -299,7 +333,7 @@ public class AnimationEditorPageView extends RecyclerListView {
     private static class InterpolatorItem extends BaseItem {
 
         InterpolatorItem() {
-            super(INTERPOLATOR_CELL);
+            super(INTERPOLATOR);
         }
 
         @Override

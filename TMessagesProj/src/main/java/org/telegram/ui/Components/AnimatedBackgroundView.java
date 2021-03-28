@@ -76,7 +76,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     public void animate(Interpolator interpolator) {
         if (valueAnimator != null && valueAnimator.isRunning()) return;
         float startState = state;
-        valueAnimator = ValueAnimator.ofFloat(0.0f, 0.5f).setDuration(1000);
+        valueAnimator = ValueAnimator.ofFloat(0.0f, 0.5f).setDuration(interpolator.getDuration());
         valueAnimator.addUpdateListener(animation -> {
             state = startState + (float) animation.getAnimatedValue();
             invalidate();

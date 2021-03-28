@@ -4343,4 +4343,5 @@
     <string name="AnimationJumpToMessage">Jump to Message</string>
     <string name="AnimationDuration">Duration</string>
     <string name="AnimationAnimate">Animate</string>
+    <string name="AnimationDurationTemplate">%sms</string>
 </resources>
