@@ -1,7 +1,6 @@
 package org.telegram.ui.Editor;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import org.telegram.messenger.animation.AnimationType;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.FilterTabsView;
 import org.telegram.ui.Components.LayoutHelper;
@@ -152,7 +152,7 @@ public class AnimationEditorView extends LinearLayout {
             View view = views[position];
             if (view == null) {
                 AnimationType animationType = AnimationType.values()[position];
-                view = new AnimationEditorPageView(context, animationType.getSettingTypes());
+                view = new AnimationEditorPageView(context, animationType);
                 views[position] = view;
             }
             container.addView(view, 0);

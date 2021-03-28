@@ -12,11 +12,15 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.animation.AnimationController;
+import org.telegram.messenger.animation.AnimationType;
+import org.telegram.messenger.animation.BackgroundAnimation;
+import org.telegram.messenger.animation.BaseAnimation;
+import org.telegram.messenger.animation.BaseAnimationSetting;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
-import org.telegram.ui.Cells.TextColorCell;
 import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.RecyclerListView;
 
@@ -25,10 +29,12 @@ import java.util.List;
 
 public class AnimationEditorPageView extends RecyclerListView {
 
+    private final AnimationType animationType;
     private final List<BaseItem> items = new ArrayList<>();
 
-    public AnimationEditorPageView(@NonNull Context context, AnimationSettingType[] settingTypes) {
+    public AnimationEditorPageView(@NonNull Context context, AnimationType animationType) {
         super(context);
+        this.animationType = animationType;
 
         // setup RecyclerListView
         setVerticalScrollBarEnabled(false);
@@ -40,18 +46,23 @@ public class AnimationEditorPageView extends RecyclerListView {
         });
 
         // add items
-        for (int i = 0, l = settingTypes.length; i < l; ++i) {
-            AnimationSettingType settingType = settingTypes[i];
-            items.add(new HeaderItem(settingType.getTitle()));
-            switch (settingType.getContentType()) {
+        BaseAnimation animation = AnimationController.getAnimation(animationType);
+        if (animation == null) return;
+        BaseAnimationSetting[] settings = animation.getSettings();
+        for (int i = 0, l = settings.length; i < l; ++i) {
+            BaseAnimationSetting setting = settings[i];
+            items.add(new HeaderItem(setting.getTitle()));
+            switch (setting.getContentType()) {
                 case BACKGROUND:
                     items.add(new BackgroundItem());
                     items.add(new TextItem(LocaleController.getString("AnimationOpenFullScreen", R.string.AnimationOpenFullScreen)));
                     break;
                 case COLORS:
-                    for (int j = 1; j <= 4; ++j) {
-                        items.add(new TextColorItem(j, Color.BLACK, color -> {
-                            // TODO
+                    BackgroundAnimation.BackgroundColorsAnimationSetting colorsSetting = (BackgroundAnimation.BackgroundColorsAnimationSetting) setting;
+                    for (int id = 0, c = colorsSetting.getColorsCount(); id < c; ++id) {
+                        final int finalId = id;
+                        items.add(new TextColorItem(id + 1, colorsSetting.getColor(animation, id), color -> {
+                            colorsSetting.setColor(animation, finalId, color);
                         }));
                     }
                     break;
