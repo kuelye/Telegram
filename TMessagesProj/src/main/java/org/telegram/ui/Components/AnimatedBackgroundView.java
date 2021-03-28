@@ -11,6 +11,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.animation.AnimationController;
 import org.telegram.messenger.animation.AnimationType;
 import org.telegram.messenger.animation.BackgroundAnimation;
+import org.telegram.messenger.animation.Interpolator;
 
 public class AnimatedBackgroundView extends View implements AnimationController.OnAnimationChangedListener {
 
@@ -64,6 +65,10 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     @Override
     public void onAnimationChanged() {
         updateAnimation();
+    }
+
+    public void animate(Interpolator interpolator) {
+        // TODO
     }
 
     private void updateAnimation() {

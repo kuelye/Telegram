@@ -10,7 +10,6 @@ import androidx.annotation.NonNull;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
-import org.telegram.messenger.animation.AnimationType;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.FilterTabsView;
 import org.telegram.ui.Components.LayoutHelper;
@@ -18,13 +17,13 @@ import org.telegram.ui.Components.LayoutHelper;
 import static androidx.viewpager.widget.ViewPager.SCROLL_STATE_DRAGGING;
 import static androidx.viewpager.widget.ViewPager.SCROLL_STATE_IDLE;
 
-public class AnimationEditorView extends LinearLayout {
+public abstract class BaseAnimationEditorView extends LinearLayout {
 
     private final FilterTabsView tabsView;
     private final ViewPager viewPager;
-    private final Adapter viewPagerAdapter;
+    protected final BaseAdapter viewPagerAdapter;
 
-    public AnimationEditorView(Context context) {
+    public BaseAnimationEditorView(Context context) {
         super(context);
         setOrientation(LinearLayout.VERTICAL);
         setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
@@ -80,16 +79,12 @@ public class AnimationEditorView extends LinearLayout {
         });
         addView(tabsView);
         tabsView.setIsFirstTabAll(false);
-        for (int i = 0, l = AnimationType.values().length; i < l; ++i) {
-            tabsView.addTab(i, i, AnimationType.values()[i].getTitle());
-        }
-        tabsView.finishAddingTabs(true);
         tabsView.setBackgroundColor(Theme.getColor(Theme.key_actionBarDefault));
 
         // pager
         viewPager = new ViewPager(context);
         viewPager.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 0, 1, Gravity.NO_GRAVITY));
-        viewPagerAdapter = new Adapter(context);
+        viewPagerAdapter = createAdapter();
         viewPager.setAdapter(viewPagerAdapter);
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
 
@@ -125,25 +120,45 @@ public class AnimationEditorView extends LinearLayout {
         addView(viewPager);
     }
 
+    protected abstract BaseAdapter createAdapter();
+    protected abstract int getTabsCount();
+    protected abstract String getTabTitle(int position);
+
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         viewPagerAdapter.onDetached();
     }
 
-    private static class Adapter extends PagerAdapter {
-
-        private final Context context;
-        private final View[] views;
-
-        Adapter(Context context) {
-            this.context = context;
-            views = new View[getCount()];
+    protected void initializeTabs() {
+        for (int i = 0, l = getTabsCount(); i < l; ++i) {
+            tabsView.addTab(i, i, getTabTitle(i));
         }
+        tabsView.finishAddingTabs(true);
+    }
+
+    protected abstract static class BaseAdapter extends PagerAdapter {
+
+        protected final Context context;
+        private int count;
+
+        private View[] views;
+
+        protected BaseAdapter(Context context, int count) {
+            this.context = context;
+            setCount(count);
+        }
+
+        protected abstract View instantiateView(int position);
 
         @Override
         public int getCount() {
-            return AnimationType.values().length;
+            return count;
+        }
+
+        public void setCount(int count) {
+            this.count = count;
+            views = new View[getCount()];
         }
 
         @NonNull
@@ -151,8 +166,7 @@ public class AnimationEditorView extends LinearLayout {
         public Object instantiateItem(@NonNull ViewGroup container, int position) {
             View view = views[position];
             if (view == null) {
-                AnimationType animationType = AnimationType.values()[position];
-                view = new AnimationEditorPageView(context, animationType);
+                view = instantiateView(position);
                 views[position] = view;
             }
             container.addView(view, 0);

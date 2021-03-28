@@ -1,7 +1,6 @@
 package org.telegram.ui.Editor;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -29,12 +28,10 @@ import java.util.List;
 
 public class AnimationEditorPageView extends RecyclerListView {
 
-    private final AnimationType animationType;
     private final List<BaseItem> items = new ArrayList<>();
 
-    public AnimationEditorPageView(@NonNull Context context, AnimationType animationType) {
+    public AnimationEditorPageView(@NonNull Context context, AnimationType animationType, Delegate delegate) {
         super(context);
-        this.animationType = animationType;
 
         // setup RecyclerListView
         setVerticalScrollBarEnabled(false);
@@ -55,7 +52,7 @@ public class AnimationEditorPageView extends RecyclerListView {
             switch (setting.getContentType()) {
                 case BACKGROUND:
                     items.add(new BackgroundItem());
-                    items.add(new TextItem(LocaleController.getString("AnimationOpenFullScreen", R.string.AnimationOpenFullScreen)));
+                    items.add(new TextItem(LocaleController.getString("AnimationOpenFullScreen", R.string.AnimationOpenFullScreen), view -> delegate.onBackgroundPreviewCalled()));
                     break;
                 case COLORS:
                     BackgroundAnimation.BackgroundColorsAnimationSetting colorsSetting = (BackgroundAnimation.BackgroundColorsAnimationSetting) setting;
@@ -214,10 +211,16 @@ public class AnimationEditorPageView extends RecyclerListView {
     private static class TextItem extends BaseItem {
 
         private final String title;
+        private final OnClickListener listener;
 
-        TextItem(String title) {
+        TextItem(String title, OnClickListener listener) {
             super(TEXT_CELL);
             this.title = title;
+            this.listener = listener;
+
+            if (listener != null) {
+                setEnabled(true);
+            }
         }
 
         @Override
@@ -225,6 +228,11 @@ public class AnimationEditorPageView extends RecyclerListView {
             TextCell cell = (TextCell) view;
             cell.setText(title, false);
             cell.setColors(Theme.key_windowBackgroundWhiteBlueIcon, Theme.key_windowBackgroundWhiteBlueButton);
+        }
+
+        @Override
+        void click(View view) {
+            listener.onClick(view);
         }
     }
 
@@ -298,5 +306,9 @@ public class AnimationEditorPageView extends RecyclerListView {
         void bind(Context context, View view) {
             // TODO
         }
+    }
+
+    public interface Delegate {
+        void onBackgroundPreviewCalled();
     }
 }

@@ -4342,4 +4342,5 @@
     <string name="AnimationOpenChat">Open Chat</string>
     <string name="AnimationJumpToMessage">Jump to Message</string>
     <string name="AnimationDuration">Duration</string>
+    <string name="AnimationAnimate">Animate</string>
 </resources>

@@ -20,9 +20,9 @@ public class BackgroundAnimation extends BaseAnimation {
         return new BaseAnimationSetting[] {
             new BaseAnimationSetting("AnimationBackgroundPreview", R.string.AnimationBackgroundPreview, BaseAnimationSetting.ContentType.BACKGROUND),
             new BackgroundColorsAnimationSetting(),
-            new BaseAnimationSetting("AnimationSendMessage", R.string.AnimationSendMessage, BaseAnimationSetting.ContentType.INTERPOLATOR),
-            new BaseAnimationSetting("AnimationOpenChat", R.string.AnimationOpenChat, BaseAnimationSetting.ContentType.INTERPOLATOR),
-            new BaseAnimationSetting("AnimationJumpToMessage", R.string.AnimationJumpToMessage, BaseAnimationSetting.ContentType.INTERPOLATOR)
+            new InterpolatorAnimationSetting("AnimationSendMessage", R.string.AnimationSendMessage),
+            new InterpolatorAnimationSetting("AnimationOpenChat", R.string.AnimationOpenChat),
+            new InterpolatorAnimationSetting("AnimationJumpToMessage", R.string.AnimationJumpToMessage)
         };
     }
 
