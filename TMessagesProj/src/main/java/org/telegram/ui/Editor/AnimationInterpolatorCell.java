@@ -6,9 +6,10 @@ import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
-import android.util.Log;
+import android.text.TextPaint;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
@@ -17,6 +18,7 @@ import androidx.annotation.NonNull;
 import com.google.zxing.common.detector.MathUtils;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
 
@@ -25,30 +27,35 @@ public class AnimationInterpolatorCell extends FrameLayout {
     private final static int HEIGHT = AndroidUtilities.dp(216);
 
     private final static int STROKE_WIDTH = AndroidUtilities.dp(2);
-    private final static int TIME_CIRCLE_RADIUS = AndroidUtilities.dp(3);
+    private final static int TIME_CIRCLE_RADIUS = AndroidUtilities.dp(4);
+    private final static int TIME_POINTER_RX = AndroidUtilities.dp(6);
+    private final static int TIME_POINTER_RY = AndroidUtilities.dp(12);
     private final static int CONTROL_POINTER_RADIUS = AndroidUtilities.dp(9);
     private final static int HORIZONTAL_PADDING = AndroidUtilities.dp(28);
-    private final static int CONTROL_LINE_PADDING = AndroidUtilities.dp(5);
     private final static int SHADOW_OFFSET = AndroidUtilities.dp(1);
+    private final static int TEXT_PADDING = AndroidUtilities.dp(4);
 
-    private final static int START_DRAG_DISTANCE = AndroidUtilities.dp(24);
+    private final static int START_DRAG_DISTANCE = AndroidUtilities.dp(20);
 
-    private final RectF rect = new RectF();
+    private final Rect rect = new Rect();
+    private final RectF rectF = new RectF();
     private final Path path = new Path();
 
-    private Drawable circleDrawable;
+    private final Drawable circleDrawable;
     private final Paint strokePaint;
     private final Paint dottedStrokePaint;
     private final Paint fillPaint;
+    private final Paint textPaint;
 
-    private float[] cs = { 1.0f, 1.0f };
-    private float[] ts = { 0.0f, 1.0f };
+    private final float[] cs = { 1.0f, 1.0f };
+    private final float[] ts = { 0.0f, 1.0f };
 
-    private Point[] tps = new Point[2];
-    private Point[] cps = new Point[4];
+    private final Point[] tps = new Point[2];
+    private final Point[] cps = new Point[4];
 
     private DragType dragType = null;
-    private MotionEvent dragDownEvent = null;
+
+    private int duration;
 
     public AnimationInterpolatorCell(@NonNull Context context) {
         super(context);
@@ -66,6 +73,8 @@ public class AnimationInterpolatorCell extends FrameLayout {
         dottedStrokePaint.setStrokeCap(Paint.Cap.ROUND);
         dottedStrokePaint.setPathEffect(new DashPathEffect(new float[] {1, TIME_CIRCLE_RADIUS * 2}, 0));
         fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setTextSize(AndroidUtilities.dp(16));
     }
 
     @Override
@@ -87,7 +96,7 @@ public class AnimationInterpolatorCell extends FrameLayout {
             int xt = (int) (x + ts[i] * activeWidth);
             int yt = y + activeHeight / 2;
             drawTimeBorder(canvas, xt, y);
-            drawTimePointer(canvas, xt, yt, AndroidUtilities.dp(6), AndroidUtilities.dp(12));
+            drawTimePointer(canvas, xt, yt, TIME_POINTER_RX, TIME_POINTER_RY);
             tps[i] = new Point(xt, yt);
         }
 
@@ -112,7 +121,31 @@ public class AnimationInterpolatorCell extends FrameLayout {
             canvas.drawLine(x, p0.y, width - x, p0.y, strokePaint);
             strokePaint.setColor(0xFF54AAEB);
             canvas.drawLine(p0.x, p0.y, p1.x, p1.y, strokePaint);
-            drawControlPointer(canvas, p1.x, p1.y);
+        }
+
+        for (int i = 0; i < 2; ++i) {
+            drawTimeBorder(canvas, tps[i].x, y);
+            drawTimePointer(canvas, tps[i].x, tps[i].y, TIME_POINTER_RX, TIME_POINTER_RY);
+        }
+
+        for (int i = 0; i < 2; ++i) {
+            Point p = cps[i * 2 + 1];
+            drawControlPointer(canvas, p.x, p.y);
+        }
+
+        for (int i = 0; i < 2; ++i) {
+            String text = LocaleController.formatString("AnimationDurationTemplate", R.string.AnimationDurationTemplate, (int) (ts[i] * duration));
+            textPaint.getTextBounds(text, 0, text.length(), rect);
+            x = tps[i].x + (i == 0 && ts[i] < 0.25 || i == 1 && ts[i] < 0.75 ? TIME_POINTER_RX + TEXT_PADDING : - TIME_POINTER_RX - TEXT_PADDING - rect.width());
+            textPaint.setColor(0xFFFFCD00);
+            canvas.drawText(text, x, tps[i].y + (float) rect.height() / 2, textPaint);
+            text = (int) Math.round(cs[i] * 100) + "%";
+            textPaint.getTextBounds(text, 0, text.length(), rect);
+            Point p = cps[i * 2 + 1];
+            x = MathUtils.clip((int) (p.x - (float) rect.width() / 2), HORIZONTAL_PADDING - TEXT_PADDING, width - HORIZONTAL_PADDING + TEXT_PADDING - rect.width());
+            y =  p.y + (i == 0 ? CONTROL_POINTER_RADIUS + TEXT_PADDING + rect.height() : - CONTROL_POINTER_RADIUS - TEXT_PADDING);
+            textPaint.setColor(0xFF54AAEB);
+            canvas.drawText(text, x, y, textPaint);
         }
     }
 
@@ -120,17 +153,16 @@ public class AnimationInterpolatorCell extends FrameLayout {
     public boolean onInterceptTouchEvent(MotionEvent event) {
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
             dragType = null;
-            if (MathUtils.distance(event.getX(), event.getY(), tps[0].x, tps[0].y) < START_DRAG_DISTANCE) {
-                dragType = DragType.TIME_0;
-            } else if (MathUtils.distance(event.getX(), event.getY(), tps[1].x, tps[1].y) < START_DRAG_DISTANCE) {
-                dragType = DragType.TIME_1;
-            } else if (MathUtils.distance(event.getX(), event.getY(), cps[1].x, cps[1].y) < START_DRAG_DISTANCE) {
+            if (Math.abs(event.getY() - cps[1].y) < START_DRAG_DISTANCE) {
                 dragType = DragType.CONTROL_0;
-            } else if (MathUtils.distance(event.getX(), event.getY(), cps[3].x, cps[3].y) < START_DRAG_DISTANCE) {
+            } else if (Math.abs(event.getY() - cps[3].y) < START_DRAG_DISTANCE) {
                 dragType = DragType.CONTROL_1;
+            } else if (event.getX() < tps[0].x + START_DRAG_DISTANCE) {
+                dragType = DragType.TIME_0;
+            } else if (event.getX() > tps[1].x - START_DRAG_DISTANCE) {
+                dragType = DragType.TIME_1;
             }
             if (dragType != null) {
-                dragDownEvent = event;
                 requestDisallowInterceptTouchEvent(true);
                 return true;
             }
@@ -140,7 +172,7 @@ public class AnimationInterpolatorCell extends FrameLayout {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
+        if (event.getActionMasked() == MotionEvent.ACTION_DOWN  || event.getActionMasked() == MotionEvent.ACTION_MOVE) {
             if (dragType != null) {
                 switch (dragType) {
                     case TIME_0:
@@ -157,14 +189,17 @@ public class AnimationInterpolatorCell extends FrameLayout {
                         break;
                 }
                 invalidate();
+                return true;
             }
+        } else if (event.getActionMasked() == MotionEvent.ACTION_UP) {
+            dragType = null;
         }
+        return super.onTouchEvent(event);
+    }
 
-        if (dragType != null) {
-            return true;
-        } else {
-            return super.onTouchEvent(event);
-        }
+    public void setDuration(int duration) {
+        this.duration = duration;
+        invalidate();
     }
 
     private void drawTimeBorder(Canvas canvas, int x, int top) {
@@ -172,21 +207,21 @@ public class AnimationInterpolatorCell extends FrameLayout {
         int bottom = canvas.getHeight() - top;
         canvas.drawCircle(x, top, TIME_CIRCLE_RADIUS, fillPaint);
         canvas.drawCircle(x, bottom, TIME_CIRCLE_RADIUS, fillPaint);
+        strokePaint.setColor(0xffffffff); // TODO color
+        canvas.drawCircle(x, top, TIME_CIRCLE_RADIUS, strokePaint);
+        canvas.drawCircle(x, bottom, TIME_CIRCLE_RADIUS, strokePaint);
         dottedStrokePaint.setColor(0xFFFFCD00); // TODO color
         canvas.drawLine(x, top, x, bottom, dottedStrokePaint);
     }
 
-//    private void drawControlBorder(Canvas canvas, int ) {
-//        strokePaint.setColor(0xFFEBEDF0);
-//        canvas.drawLine();
-//    }
-
     private void drawTimePointer(Canvas canvas, int x, int y, int rx, int ry) {
-        circleDrawable.setBounds(x - rx - SHADOW_OFFSET, y - ry - SHADOW_OFFSET, x + rx + SHADOW_OFFSET, y + ry + SHADOW_OFFSET);
-        circleDrawable.draw(canvas);
+        fillPaint.setColor(0xFFEBEDF0); // TODO color
+        int s = SHADOW_OFFSET / 2;
+        rectF.set(x - rx - s, y - ry - s, x + rx + s, y + ry + s);
+        canvas.drawRoundRect(rectF, rx, rx, fillPaint);
         fillPaint.setColor(0xffffffff); // TODO color
-        rect.set(x - rx, y - ry, x + rx, y + ry);
-        canvas.drawRoundRect(rect, rx, rx, fillPaint);
+        rectF.set(x - rx, y - ry, x + rx, y + ry);
+        canvas.drawRoundRect(rectF, rx, rx, fillPaint);
     }
 
     private void drawControlPointer(Canvas canvas, int x, int y) {

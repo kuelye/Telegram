@@ -79,10 +79,14 @@ public class AnimationEditorPageView extends RecyclerListView {
                         }
                         durationItems[j] = item;
                     }
+                    InterpolatorItem interpolatorItem = new InterpolatorItem(interpolator.getDuration());
+                    int interpolatorItemI = i + 1;
                     items.add(new TextSpinnerItem(LocaleController.getString("AnimationDuration", R.string.AnimationDuration), durationItems, selectedItem, item -> {
                         interpolator.setDuration(item.getValue());
+                        interpolatorItem.setDuration(item.getValue());
+                        adapter.notifyItemChanged(interpolatorItemI);
                     }));
-                    items.add(new InterpolatorItem());
+                    items.add(interpolatorItem);
                     break;
             }
             items.add(new ShadowItem(i == l - 1));
@@ -332,13 +336,21 @@ public class AnimationEditorPageView extends RecyclerListView {
 
     private static class InterpolatorItem extends BaseItem {
 
-        InterpolatorItem() {
+        private int duration;
+
+        InterpolatorItem(int duration) {
             super(INTERPOLATOR);
+            this.duration = duration;
         }
 
         @Override
         void bind(Context context, View view) {
-            // TODO
+            AnimationInterpolatorCell cell = (AnimationInterpolatorCell) view;
+            cell.setDuration(duration);
+        }
+
+        public void setDuration(int duration) {
+            this.duration = duration;
         }
     }
 
