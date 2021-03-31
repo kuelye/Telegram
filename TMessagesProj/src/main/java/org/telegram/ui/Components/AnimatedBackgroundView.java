@@ -1,5 +1,6 @@
 package org.telegram.ui.Components;
 
+import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -10,6 +11,11 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AnticipateInterpolator;
+import android.view.animation.OvershootInterpolator;
+
+import androidx.annotation.ColorInt;
 
 import com.google.zxing.common.detector.MathUtils;
 
@@ -19,12 +25,17 @@ import org.telegram.messenger.animation.AnimationType;
 import org.telegram.messenger.animation.BackgroundAnimation;
 import org.telegram.messenger.animation.Interpolator;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 public class AnimatedBackgroundView extends View implements AnimationController.OnAnimationChangedListener {
 
     private final static PointF[] DEFAULT_POINTS = { new PointF(0.35f, 0.25f), new PointF(0.82f, 0.08f), new PointF(0.65f, 0.75f), new PointF(0.18f, 0.92f)};
-    private final static float RADIUS_FACTOR = 0.05f;
-    private final static int STROKE_WIDTH = AndroidUtilities.dp(2);
-    private final static int STROKE_COLOR = Color.WHITE;
+
+    private final static float DEV_POINTS_RADIUS_FACTOR = 0.05f;
+    private final static int DEV_POINTS_STROKE_WIDTH = AndroidUtilities.dp(4);
+    private final static int DEV_POINTS_STROKE_COLOR = Color.WHITE;
+    private final static float DEV_POINTS_START_SCALE = 2f;
 
     private final Paint fillPaint;
     private final Paint strokePaint;
@@ -44,6 +55,11 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     private final int[] bs = new int[4];
     private float[] rxs = null;
 
+    private boolean isDevPointsVisible;
+    private float devPointsAlpha;
+    private float devPointsScale = DEV_POINTS_START_SCALE;
+    private AnimatorSet devPointsVisibleAnimatorSet = null;
+
     public AnimatedBackgroundView(Context context) {
         super(context);
 
@@ -52,8 +68,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
         strokePaint = new Paint();
         strokePaint.setAntiAlias(true);
         strokePaint.setStyle(Paint.Style.STROKE);
-        strokePaint.setStrokeWidth(STROKE_WIDTH);
-        strokePaint.setColor(STROKE_COLOR);
+        strokePaint.setStrokeWidth(DEV_POINTS_STROKE_WIDTH);
         framePaint = new Paint(Paint.FILTER_BITMAP_FLAG);
 
         updateAnimation();
@@ -89,14 +104,15 @@ public class AnimatedBackgroundView extends View implements AnimationController.
             canvas.drawBitmap(frame, frameMatrix, framePaint);
         }
 
-        if (points != null) {
-            float radius = getWidth() * RADIUS_FACTOR;
+        if (devPointsAlpha != 0 && points != null) {
+            float r = getWidth() * DEV_POINTS_RADIUS_FACTOR * devPointsScale;
             for (int i = 0; i < 4; ++i) {
-                fillPaint.setColor(animation.getColor(i));
+                fillPaint.setColor(setAlpha(animation.getColor(i), devPointsAlpha));
                 float x = getWidth() * points[i].x;
                 float y = getHeight() * points[i].y;
-                canvas.drawCircle(x, y, radius, fillPaint);
-                canvas.drawCircle(x, y, radius, strokePaint);
+                canvas.drawCircle(x, y, r, fillPaint);
+                strokePaint.setColor(setAlpha(DEV_POINTS_STROKE_COLOR, devPointsAlpha));
+                canvas.drawCircle(x, y, r, strokePaint);
             }
         }
     }
@@ -124,6 +140,32 @@ public class AnimatedBackgroundView extends View implements AnimationController.
             valueAnimator.cancel();
             valueAnimator = null;
         }
+    }
+
+    public boolean isDevPointsVisible() {
+        return isDevPointsVisible;
+    }
+
+    public void setDevPointsVisible(Boolean isVisible) {
+        isDevPointsVisible = isVisible;
+        cancelPointsVisibleAnimation();
+        devPointsVisibleAnimatorSet = new AnimatorSet();
+        float targetAlpha = isVisible ? 1 : 0;
+        ValueAnimator alphaAnimator = ValueAnimator.ofFloat(devPointsAlpha, targetAlpha);
+        alphaAnimator.addUpdateListener(animation -> {
+            devPointsAlpha = (float) animation.getAnimatedValue();
+            invalidate();
+        });
+        float targetScale = isVisible ? 1 : DEV_POINTS_START_SCALE;
+        ValueAnimator scaleAnimator = ValueAnimator.ofFloat(devPointsScale, targetScale);
+        scaleAnimator.setInterpolator(isVisible ? new OvershootInterpolator() : new AnticipateInterpolator());
+        scaleAnimator.addUpdateListener(animation -> {
+            devPointsScale = (float) animation.getAnimatedValue();
+            invalidate();
+        });
+        devPointsVisibleAnimatorSet.setDuration(max(1, (long) (300 * Math.abs(targetAlpha - devPointsAlpha))));
+        devPointsVisibleAnimatorSet.playTogether(alphaAnimator, scaleAnimator);
+        devPointsVisibleAnimatorSet.start();
     }
 
     private void updateAnimation() {
@@ -161,6 +203,18 @@ public class AnimatedBackgroundView extends View implements AnimationController.
         return i;
     }
 
+    @ColorInt
+    private int setAlpha(@ColorInt int color, float alpha) {
+        return ((int) (alpha * 255) << 24) | (color & 0xFFFFFF);
+    }
+
+    private void cancelPointsVisibleAnimation() {
+        if (devPointsVisibleAnimatorSet != null) {
+            devPointsVisibleAnimatorSet.cancel();
+            devPointsVisibleAnimatorSet = null;
+        }
+    }
+
     private Bitmap generateBitmap() {
         Log.v("GUB", "generateBitmap: start");
         if (getWidth() == 0 || getHeight() == 0) {
@@ -168,7 +222,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
         }
 
         long now = System.currentTimeMillis();
-        int s = getWidth() / 1;
+        int s = getWidth() / 10;
         Bitmap bitmap = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888);
 
         rxs = new float[s];
@@ -191,7 +245,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
             gs[i] = Color.green(animation.getColor(i));
             bs[i] = Color.blue(animation.getColor(i));
         }
-        float d = Math.min(ds[0], Math.min(ds[1], Math.min(ds[2], ds[3])));
+        float d = min(ds[0], min(ds[1], min(ds[2], ds[3])));
         for (int i = 0; i < 4; ++i) {
             ds[i] = (float) Math.pow(1 - (ds[i] - d), 5);
         }

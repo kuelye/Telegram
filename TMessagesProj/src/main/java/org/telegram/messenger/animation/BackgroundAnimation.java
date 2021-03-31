@@ -22,7 +22,7 @@ public class BackgroundAnimation extends BaseAnimation {
     @Override
     public BaseAnimationSetting[] getSettings() {
         return new BaseAnimationSetting[] {
-            new BaseAnimationSetting("AnimationBackgroundPreview", R.string.AnimationBackgroundPreview, BaseAnimationSetting.ContentType.BACKGROUND),
+            new BaseAnimationSetting("BackgroundPreview", R.string.BackgroundPreview, BaseAnimationSetting.ContentType.BACKGROUND),
             new BackgroundColorsAnimationSetting(),
             new InterpolatorAnimationSetting("AnimationSendMessage", R.string.AnimationSendMessage, SEND_MESSAGE_INTERPOLATOR_ID),
             new InterpolatorAnimationSetting("AnimationOpenChat", R.string.AnimationOpenChat, OPEN_CHAT_INTERPOLATOR_ID),
@@ -46,7 +46,7 @@ public class BackgroundAnimation extends BaseAnimation {
     public static class BackgroundColorsAnimationSetting extends BaseAnimationSetting {
 
         BackgroundColorsAnimationSetting() {
-            super("AnimationBackgroundPreview", R.string.AnimationBackgroundPreview, ContentType.COLORS);
+            super("BackgroundPreview", R.string.BackgroundPreview, ContentType.COLORS);
         }
 
         @ColorInt

@@ -1,9 +1,12 @@
 package org.telegram.ui;
 
 import android.content.Context;
+import android.graphics.Paint;
+import android.text.TextPaint;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -18,6 +21,7 @@ import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedBackgroundView;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.WallpaperCheckBoxView;
 import org.telegram.ui.Editor.BaseAnimationEditorView;
 
 import java.util.ArrayList;
@@ -30,7 +34,7 @@ public class ChatBackgroundAnimationPreviewActivity extends BaseChatAnimationAct
         View view = super.createView(context);
 
         // toolbar
-        actionBar.setTitle(LocaleController.getString("AnimationBackgroundPreview", R.string.AnimationBackgroundPreview));
+        actionBar.setTitle(LocaleController.getString("BackgroundPreview", R.string.BackgroundPreview));
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(final int id) {
@@ -88,22 +92,68 @@ public class ChatBackgroundAnimationPreviewActivity extends BaseChatAnimationAct
 
             @Override
             protected View instantiateView(int position) {
+                // root container
                 LinearLayout container = new LinearLayout(context);
                 container.setOrientation(VERTICAL);
                 container.setBackgroundColor(Theme.getColor(Theme.key_dialogBackground));
+
+                // background container
+                FrameLayout backgroundContainer = new FrameLayout(context);
+                container.addView(backgroundContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 0, 1f));
+
+                // animated background
                 AnimatedBackgroundView backgroundView = new AnimatedBackgroundView(context);
-                container.addView(backgroundView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 0, 1f));
-                TextView view = new TextView(context);
-                view.setText(LocaleController.getString("AnimationAnimate", R.string.AnimationAnimate));
-                view.setGravity(Gravity.CENTER);
-                view.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-                view.setAllCaps(true);
-                view.setTextColor(Theme.getColor(Theme.key_dialogButton));
-                view.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-                view.setBackgroundDrawable(Theme.getRoundRectSelectorDrawable(Theme.getColor(Theme.key_dialogButton)));
+                backgroundContainer.addView(backgroundView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+
+                // ANIMATE button
+                TextView animateView = new TextView(context);
+                animateView.setText(LocaleController.getString("AnimationAnimate", R.string.AnimationAnimate));
+                animateView.setGravity(Gravity.CENTER);
+                animateView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+                animateView.setAllCaps(true);
+                animateView.setTextColor(Theme.getColor(Theme.key_dialogButton));
+                animateView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+                animateView.setBackgroundDrawable(Theme.getRoundRectSelectorDrawable(Theme.getColor(Theme.key_dialogButton)));
                 BaseAnimation animation = AnimationController.getBackgroundAnimation();
-                view.setOnClickListener(v -> backgroundView.animate(animation.getInterpolator(position)));
-                container.addView(view, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 44));
+                animateView.setOnClickListener(v -> backgroundView.animate(animation.getInterpolator(position)));
+                container.addView(animateView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 44));
+
+                // small buttons setup
+                int textsCount = 1;
+                String[] texts = new String[textsCount];
+                int[] textSizes = new int[textsCount];
+                WallpaperCheckBoxView[] checkBoxViews = new WallpaperCheckBoxView[textsCount];
+                texts[0] = "(DEV) Points";
+                int maxTextSize = 0;
+                TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+                textPaint.setTextSize(AndroidUtilities.dp(14));
+                textPaint.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+                for (int a = 0; a < texts.length; a++) {
+                    textSizes[a] = (int) Math.ceil(textPaint.measureText(texts[a]));
+                    maxTextSize = Math.max(maxTextSize, textSizes[a]);
+                }
+
+                // small buttons container
+                LinearLayout buttonsContainer = new LinearLayout(context);
+                buttonsContainer.setOrientation(HORIZONTAL);
+                backgroundContainer.addView(buttonsContainer, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 34, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 16));
+
+                // small buttons
+                for (int i = 0; i < textsCount; i++) {
+                    WallpaperCheckBoxView checkBoxView = new WallpaperCheckBoxView(context, true);
+                    checkBoxViews[i] = checkBoxView;
+                    checkBoxView.setText(texts[i], textSizes[i], maxTextSize);
+                    int width = maxTextSize + AndroidUtilities.dp(14 * 2 + 28);
+                    buttonsContainer.addView(checkBoxViews[i], LayoutHelper.createLinear(width, LayoutHelper.WRAP_CONTENT, Gravity.NO_GRAVITY, i > 0 ? 8 : 0, 0, 0, 0));
+                    int finalI = i;
+                    checkBoxView.setOnClickListener(v -> {
+                        if (finalI == 0) {
+                            backgroundView.setDevPointsVisible(!backgroundView.isDevPointsVisible());
+                            checkBoxView.setChecked(backgroundView.isDevPointsVisible(), true);
+                        }
+                    });
+                }
+
                 return container;
             }
         }
