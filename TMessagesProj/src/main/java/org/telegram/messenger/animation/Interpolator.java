@@ -7,11 +7,27 @@ public class Interpolator {
 
     private int duration = Interpolator.DEFAULT_DURATION;
 
+    private float[] cs = { 1.0f, 1.0f };
+    private float[] ts = { 0.0f, 1.0f };
+
     public int getDuration() {
         return duration;
     }
 
     public void setDuration(int duration) {
         this.duration = duration;
+    }
+
+    public float[] getCs() {
+        return cs;
+    }
+
+    public float[] getTs() {
+        return ts;
+    }
+
+    public void setParameters(float[] cs, float ts[]) {
+        this.cs = cs;
+        this.ts = ts;
     }
 }

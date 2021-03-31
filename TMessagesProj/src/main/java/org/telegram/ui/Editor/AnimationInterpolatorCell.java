@@ -20,6 +20,7 @@ import com.google.zxing.common.detector.MathUtils;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.animation.Interpolator;
 import org.telegram.ui.ActionBar.Theme;
 
 public class AnimationInterpolatorCell extends FrameLayout {
@@ -47,8 +48,8 @@ public class AnimationInterpolatorCell extends FrameLayout {
     private final Paint fillPaint;
     private final Paint textPaint;
 
-    private final float[] cs = { 1.0f, 1.0f };
-    private final float[] ts = { 0.0f, 1.0f };
+    private float[] cs = { 1.0f, 1.0f };
+    private float[] ts = { 0.0f, 1.0f };
 
     private final Point[] tps = new Point[2];
     private final Point[] cps = new Point[4];
@@ -56,6 +57,8 @@ public class AnimationInterpolatorCell extends FrameLayout {
     private DragType dragType = null;
 
     private int duration;
+
+    private OnInterpolatorChangedListener onInterpolatorChangedListener;
 
     public AnimationInterpolatorCell(@NonNull Context context) {
         super(context);
@@ -202,6 +205,23 @@ public class AnimationInterpolatorCell extends FrameLayout {
         invalidate();
     }
 
+    public void setInterpolatorParams(Interpolator interpolator) {
+        cs = interpolator.getCs();
+        ts = interpolator.getTs();
+    }
+
+    private void setInterpolatorParams(Interpolator interpolator, boolean internal) {
+        cs = interpolator.getCs();
+        ts = interpolator.getTs();
+        if (internal && onInterpolatorChangedListener != null) {
+            onInterpolatorChangedListener.onInterpolatorParamsChanged(cs, ts);
+        }
+    }
+
+    public void setOnInterpolatorChangedListener(OnInterpolatorChangedListener listener) {
+        onInterpolatorChangedListener = listener;
+    }
+
     private void drawTimeBorder(Canvas canvas, int x, int top) {
         fillPaint.setColor(0xFFFFCD00); // TODO color
         int bottom = canvas.getHeight() - top;
@@ -237,5 +257,9 @@ public class AnimationInterpolatorCell extends FrameLayout {
         TIME_1,
         CONTROL_0,
         CONTROL_1
+    }
+
+    public interface OnInterpolatorChangedListener {
+        void onInterpolatorParamsChanged(float[] cs, float[] ts);
     }
 }

@@ -1,6 +1,7 @@
 package org.telegram.ui.Editor;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -33,6 +34,7 @@ import java.util.List;
 public class AnimationEditorPageView extends RecyclerListView {
 
     private final List<BaseItem> items = new ArrayList<>();
+    private final List<InterpolatorItem> interpolatorItems = new ArrayList<>();
 
     public AnimationEditorPageView(@NonNull Context context, AnimationType animationType, Delegate delegate) {
         super(context);
@@ -57,7 +59,6 @@ public class AnimationEditorPageView extends RecyclerListView {
             }
             TextSpinnerCell.Item[] durationItems;
             TextSpinnerCell.Item selectedDurationItem;
-            List<InterpolatorItem> interpolatorItems = new ArrayList<>();
             switch (setting.getContentType()) {
                 case BACKGROUND:
                     items.add(new BackgroundItem());
@@ -93,7 +94,7 @@ public class AnimationEditorPageView extends RecyclerListView {
                     InterpolatorAnimationSetting interpolatorSetting = (InterpolatorAnimationSetting) setting;
                     Interpolator interpolator = animation.getInterpolator(interpolatorSetting.getInterpolatorId());
                     boolean isBaseChatAnimation = animation instanceof BaseChatAnimation;
-                    InterpolatorItem interpolatorItem = new InterpolatorItem(isBaseChatAnimation ? ((BaseChatAnimation) animation).getDuration() : interpolator.getDuration());
+                    InterpolatorItem interpolatorItem = new InterpolatorItem(isBaseChatAnimation ? ((BaseChatAnimation) animation).getDuration() : interpolator.getDuration(), interpolator, interpolator::setParameters);
                     interpolatorItems.add(interpolatorItem);
                     if (!isBaseChatAnimation) {
                         durationItems = getDurationItems();
@@ -103,11 +104,10 @@ public class AnimationEditorPageView extends RecyclerListView {
                                 selectedDurationItem = item;
                             }
                         }
-                        int interpolatorItemI = i + 1;
                         items.add(new TextSpinnerItem(LocaleController.getString("AnimationDuration", R.string.AnimationDuration), durationItems, selectedDurationItem, item -> {
                             interpolator.setDuration(item.getValue());
                             interpolatorItem.setDuration(item.getValue());
-                            adapter.notifyItemChanged(interpolatorItemI);
+                            adapter.notifyDataSetChanged();
                         }));
                     }
                     items.add(interpolatorItem);
@@ -371,16 +371,22 @@ public class AnimationEditorPageView extends RecyclerListView {
     private static class InterpolatorItem extends BaseItem {
 
         private int duration;
+        private Interpolator interpolator;
+        private final AnimationInterpolatorCell.OnInterpolatorChangedListener listener;
 
-        InterpolatorItem(int duration) {
+        InterpolatorItem(int duration, Interpolator interpolator, AnimationInterpolatorCell.OnInterpolatorChangedListener listener) {
             super(INTERPOLATOR);
             this.duration = duration;
+            this.interpolator = interpolator;
+            this.listener = listener;
         }
 
         @Override
         void bind(Context context, View view) {
             AnimationInterpolatorCell cell = (AnimationInterpolatorCell) view;
             cell.setDuration(duration);
+            cell.setInterpolatorParams(interpolator);
+            cell.setOnInterpolatorChangedListener(listener);
         }
 
         public void setDuration(int duration) {
