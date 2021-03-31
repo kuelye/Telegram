@@ -4343,4 +4343,10 @@
     <string name="AnimationDuration">Duration</string>
     <string name="AnimationAnimate">Animate</string>
     <string name="AnimationDurationTemplate">%sms</string>
+    <string name="AnimationXPosition">X Position</string>
+    <string name="AnimationYPosition">Y Position</string>
+    <string name="AnimationBubbleShape">Bubble shape</string>
+    <string name="AnimationTextScale">Text scale</string>
+    <string name="AnimationColorChange">Color change</string>
+    <string name="AnimationTimeAppears">Time appears</string>
 </resources>

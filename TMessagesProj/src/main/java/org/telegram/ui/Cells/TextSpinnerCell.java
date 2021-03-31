@@ -45,7 +45,9 @@ public class TextSpinnerCell extends TextSettingsCell {
 
     private void setSelectedItem(Item item, boolean internal) {
         selectedItem = item;
-        setValue(selectedItem.title);
+        if (selectedItem != null) {
+            setValue(selectedItem.title);
+        }
         if (internal && onItemSelectedListener != null) {
             onItemSelectedListener.onItemSelected(item);
         }

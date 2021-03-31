@@ -29,6 +29,7 @@ public class AnimationController {
 
     private AnimationController() {
         animations.put(AnimationType.BACKGROUND, new BackgroundAnimation());
+        animations.put(AnimationType.SHORT_TEXT, new TextAnimation(AnimationType.SHORT_TEXT));
     }
 
     public static BaseAnimation getAnimation(AnimationType type) {

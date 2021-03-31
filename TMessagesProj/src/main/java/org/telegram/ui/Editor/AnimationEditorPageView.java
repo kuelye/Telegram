@@ -16,6 +16,7 @@ import org.telegram.messenger.animation.AnimationType;
 import org.telegram.messenger.animation.BackgroundAnimation;
 import org.telegram.messenger.animation.BaseAnimation;
 import org.telegram.messenger.animation.BaseAnimationSetting;
+import org.telegram.messenger.animation.BaseChatAnimation;
 import org.telegram.messenger.animation.Interpolator;
 import org.telegram.messenger.animation.InterpolatorAnimationSetting;
 import org.telegram.ui.ActionBar.Theme;
@@ -51,7 +52,12 @@ public class AnimationEditorPageView extends RecyclerListView {
         BaseAnimationSetting[] settings = animation.getSettings();
         for (int i = 0, l = settings.length; i < l; ++i) {
             BaseAnimationSetting setting = settings[i];
-            items.add(new HeaderItem(setting.getTitle()));
+            if (setting.getTitle() != null) {
+                items.add(new HeaderItem(setting.getTitle()));
+            }
+            TextSpinnerCell.Item[] durationItems;
+            TextSpinnerCell.Item selectedDurationItem;
+            List<InterpolatorItem> interpolatorItems = new ArrayList<>();
             switch (setting.getContentType()) {
                 case BACKGROUND:
                     items.add(new BackgroundItem());
@@ -66,26 +72,44 @@ public class AnimationEditorPageView extends RecyclerListView {
                         }));
                     }
                     break;
+                case DURATION:
+                    BaseChatAnimation baseChatAnimation = (BaseChatAnimation) animation;
+                    durationItems = getDurationItems();
+                    selectedDurationItem = null;
+                    for (TextSpinnerCell.Item item : durationItems) {
+                        if (item.getValue() == baseChatAnimation.getDuration()) {
+                            selectedDurationItem = item;
+                        }
+                    }
+                    items.add(new TextSpinnerItem(LocaleController.getString("AnimationDuration", R.string.AnimationDuration), durationItems, selectedDurationItem, item -> {
+                        baseChatAnimation.setDuration(item.getValue());
+                        for (InterpolatorItem interpolatorItem : interpolatorItems) {
+                            interpolatorItem.setDuration(item.getValue());
+                        }
+                        adapter.notifyDataSetChanged();
+                    }));
+                    break;
                 case INTERPOLATOR:
                     InterpolatorAnimationSetting interpolatorSetting = (InterpolatorAnimationSetting) setting;
                     Interpolator interpolator = animation.getInterpolator(interpolatorSetting.getInterpolatorId());
-                    TextSpinnerCell.Item[] durationItems = new TextSpinnerCell.Item[Interpolator.DURATIONS.length];
-                    TextSpinnerCell.Item selectedItem = null;
-                    for (int j = 0, c = Interpolator.DURATIONS.length; j < c; ++j) {
-                        int duration = Interpolator.DURATIONS[j];
-                        TextSpinnerCell.Item item = new TextSpinnerCell.Item(duration, LocaleController.formatString("AnimationDurationTemplate", R.string.AnimationDurationTemplate, duration));
-                        if (duration == interpolator.getDuration()) {
-                            selectedItem = item;
+                    boolean isBaseChatAnimation = animation instanceof BaseChatAnimation;
+                    InterpolatorItem interpolatorItem = new InterpolatorItem(isBaseChatAnimation ? ((BaseChatAnimation) animation).getDuration() : interpolator.getDuration());
+                    interpolatorItems.add(interpolatorItem);
+                    if (!isBaseChatAnimation) {
+                        durationItems = getDurationItems();
+                        selectedDurationItem = null;
+                        for (TextSpinnerCell.Item item : durationItems) {
+                            if (item.getValue() == interpolator.getDuration()) {
+                                selectedDurationItem = item;
+                            }
                         }
-                        durationItems[j] = item;
+                        int interpolatorItemI = i + 1;
+                        items.add(new TextSpinnerItem(LocaleController.getString("AnimationDuration", R.string.AnimationDuration), durationItems, selectedDurationItem, item -> {
+                            interpolator.setDuration(item.getValue());
+                            interpolatorItem.setDuration(item.getValue());
+                            adapter.notifyItemChanged(interpolatorItemI);
+                        }));
                     }
-                    InterpolatorItem interpolatorItem = new InterpolatorItem(interpolator.getDuration());
-                    int interpolatorItemI = i + 1;
-                    items.add(new TextSpinnerItem(LocaleController.getString("AnimationDuration", R.string.AnimationDuration), durationItems, selectedItem, item -> {
-                        interpolator.setDuration(item.getValue());
-                        interpolatorItem.setDuration(item.getValue());
-                        adapter.notifyItemChanged(interpolatorItemI);
-                    }));
                     items.add(interpolatorItem);
                     break;
             }
@@ -96,6 +120,16 @@ public class AnimationEditorPageView extends RecyclerListView {
 
     private BaseItem getItem(int position) {
         return items.get(position);
+    }
+
+    private TextSpinnerCell.Item[] getDurationItems() {
+        TextSpinnerCell.Item[] items = new TextSpinnerCell.Item[Interpolator.DURATIONS.length];
+        for (int j = 0, c = Interpolator.DURATIONS.length; j < c; ++j) {
+            int duration = Interpolator.DURATIONS[j];
+            TextSpinnerCell.Item item = new TextSpinnerCell.Item(duration, LocaleController.formatString("AnimationDurationTemplate", R.string.AnimationDurationTemplate, duration));
+            items[j] = item;
+        }
+        return items;
     }
 
     private class Adapter extends RecyclerListView.SelectionAdapter {

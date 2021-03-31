@@ -17,7 +17,7 @@ public class BaseAnimationSetting {
     }
 
     public String getTitle() {
-        return LocaleController.getString(titleKey, titleRes);
+        return titleKey == null ? null : LocaleController.getString(titleKey, titleRes);
     }
 
     public ContentType getContentType() {
@@ -27,6 +27,7 @@ public class BaseAnimationSetting {
     public enum ContentType {
         BACKGROUND,
         COLORS,
+        DURATION,
         INTERPOLATOR
     }
 }
