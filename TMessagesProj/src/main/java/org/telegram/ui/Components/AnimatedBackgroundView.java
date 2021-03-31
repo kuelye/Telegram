@@ -11,22 +11,19 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AnticipateInterpolator;
 import android.view.animation.OvershootInterpolator;
 
 import androidx.annotation.ColorInt;
 
-import com.google.zxing.common.detector.MathUtils;
-
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.Utilities;
 import org.telegram.messenger.animation.AnimationController;
 import org.telegram.messenger.animation.AnimationType;
 import org.telegram.messenger.animation.BackgroundAnimation;
 import org.telegram.messenger.animation.Interpolator;
 
 import static java.lang.Math.max;
-import static java.lang.Math.min;
 
 public class AnimatedBackgroundView extends View implements AnimationController.OnAnimationChangedListener {
 
@@ -224,38 +221,49 @@ public class AnimatedBackgroundView extends View implements AnimationController.
         long now = System.currentTimeMillis();
         int s = getWidth() / 10;
         Bitmap bitmap = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888);
+        float[] points = new float[8];
+        int[] colors = new int[4];
+        for (int i = 0; i < 4; ++i) {
+            points[i * 2] = this.points[i].x;
+            points[i * 2 + 1] = this.points[i].y;
+            colors[i] = animation.getColor(i);
+        }
+        Utilities.generateBackgroundBitmap(bitmap, points, colors);
 
-        rxs = new float[s];
-        for (int x = 0; x < s; ++x) {
-            rxs[x] = (float) x / s;
-        }
-        for (int x = 0; x < s; ++x) {
-            for (int y = 0; y < s; ++y) {
-                bitmap.setPixel(x, y, getGradientColor(rxs[x], rxs[y]));
-            }
-        }
+//        rxs = new float[s];
+//        for (int x = 0; x < s; ++x) {
+//            rxs[x] = (float) x / s;
+//        }
+//        for (int x = 0; x < s; ++x) {
+//            for (int y = 0; y < s; ++y) {
+//                bitmap.setPixel(x, y, getGradientColor(rxs[x], rxs[y]));
+//            }
+//        }
         Log.v("GUB", "generateBitmap: elapsed=" + (System.currentTimeMillis() - now) + "ms");
         return bitmap;
     }
 
-    private int getGradientColor(float x, float y) {
-        for (int i = 0; i < 4; ++i) {
-            ds[i] = MathUtils.distance(x, y, points[i].x, points[i].y);
-            rs[i] = Color.red(animation.getColor(i));
-            gs[i] = Color.green(animation.getColor(i));
-            bs[i] = Color.blue(animation.getColor(i));
-        }
-        float d = min(ds[0], min(ds[1], min(ds[2], ds[3])));
-        for (int i = 0; i < 4; ++i) {
-            ds[i] = (float) Math.pow(1 - (ds[i] - d), 5);
-        }
-        d = ds[0] + ds[1] + ds[2] + ds[3];
-        for (int i = 0; i < 4; ++i) {
-            ds[i] = ds[i] / d;
-        }
-        int r = (int) (rs[0] * ds[0] + rs[1] * ds[1] + rs[2] * ds[2] + rs[3] * ds[3]);
-        int g = (int) (gs[0] * ds[0] + gs[1] * ds[1] + gs[2] * ds[2] + gs[3] * ds[3]);
-        int b = (int) (bs[0] * ds[0] + bs[1] * ds[1] + bs[2] * ds[2] + bs[3] * ds[3]);
-        return Color.rgb(r, g, b);
-    }
+//    private int getGradientColor(float x, float y) {
+//        for (int i = 0; i < 4; ++i) {
+//            ds[i] = MathUtils.distance(x, y, points[i].x, points[i].y);
+//            rs[i] = Color.red(animation.getColor(i));
+//            gs[i] = Color.green(animation.getColor(i));
+//            bs[i] = Color.blue(animation.getColor(i));
+//        }
+//        if (x == 0 && y == 0) {
+//            Log.v("GUB", "(0, 0): " + ds[0] + ", " + ds[1] + ", " + ds[2] + ", " + ds[3]);
+//        }
+//        float d = min(ds[0], min(ds[1], min(ds[2], ds[3])));
+//        for (int i = 0; i < 4; ++i) {
+//            ds[i] = (float) Math.pow(1 - (ds[i] - d), 5);
+//        }
+//        d = ds[0] + ds[1] + ds[2] + ds[3];
+//        for (int i = 0; i < 4; ++i) {
+//            ds[i] = ds[i] / d;
+//        }
+//        int r = (int) (rs[0] * ds[0] + rs[1] * ds[1] + rs[2] * ds[2] + rs[3] * ds[3]);
+//        int g = (int) (gs[0] * ds[0] + gs[1] * ds[1] + gs[2] * ds[2] + gs[3] * ds[3]);
+//        int b = (int) (bs[0] * ds[0] + bs[1] * ds[1] + bs[2] * ds[2] + bs[3] * ds[3]);
+//        return Color.rgb(r, g, b);
+//    }
 }

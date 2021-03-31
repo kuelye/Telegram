@@ -69,6 +69,7 @@ public class Utilities {
     public static native void stackBlurBitmap(Bitmap bitmap, int radius);
     public static native void drawDitheredGradient(Bitmap bitmap, int[] colors, int startX, int startY, int endX, int endY);
     public static native int saveProgressiveJpeg(Bitmap bitmap, int width, int height, int stride, int quality, String path);
+    public static native void generateBackgroundBitmap(Bitmap bitmap, float[] points, int[] colors);
 
     public static Bitmap blurWallpaper(Bitmap src) {
         if (src == null) {
