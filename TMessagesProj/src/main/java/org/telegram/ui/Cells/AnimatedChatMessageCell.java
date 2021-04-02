@@ -43,9 +43,8 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private boolean isRealCellLayoutDone = false;
     private boolean isAnimationCorrected = true;
     private boolean isAnimationFinished = false;
+    private boolean isCorrectionAnimationStarted = false;
     private boolean isCorrectionAnimationFinished = false;
-
-    private float startCorrectionRatio;
 
     public AnimatedChatMessageCell(Context context, MessageObject obj, Delegate delegate) {
         super(context);
@@ -104,7 +103,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
     public void checkAnimationFinish() {
         Log.v("GUB", "checkAnimationFinish: isAnimationFinished=" + isAnimationFinished + ", getEndY()=" + getEndY() + ", getY()=" + getY());
-        if (isAnimationFinished && isCorrectionAnimationFinished && getEndY() == getY()) {
+        if (isAnimationFinished && (!isCorrectionAnimationStarted || isCorrectionAnimationFinished) && getEndY() == getY()) {
             endAnimation();
         }
     }
@@ -233,6 +232,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     }
 
     private void startCorrectionAnimation() {
+        isCorrectionAnimationStarted = true;
         parameters.put(CORRECTED_Y, new Integer[] { (int) getY(), getEndY() });
 
         correctionAnimator = ValueAnimator.ofFloat(0, 1);

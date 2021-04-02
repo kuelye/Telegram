@@ -5854,6 +5854,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
 
                         chatListView.setTranslationY(dy);
+                        animatedMessagesOverlay.setTranslationY(dy);
                         if (topView != null && topView.getVisibility() == View.VISIBLE) {
                             topView.setTranslationY(animatedTop + (1f - topViewEnterProgress) * topView.getLayoutParams().height);
                             if (topLineView != null) {
@@ -5881,6 +5882,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                     pagedownButton.setTranslationY(v);
                                 }
                                 chatListView.setTranslationY(v);
+                                animatedMessagesOverlay.setTranslationY(v);
                                 invalidateChatListViewTopPadding();
                                 invalidateMessagesVisiblePart();
                             }
@@ -5897,6 +5899,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                     }
                                 } else {
                                     chatListView.setTranslationY(0);
+                                    animatedMessagesOverlay.setTranslationY(0);
                                 }
                                 changeBoundAnimator = null;
                             }
@@ -6260,6 +6263,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                 translation += chatActivityEnterView.getTopViewTranslation();
                 chatListView.setTranslationY(translation);
+                animatedMessagesOverlay.setTranslationY(translation);
 
                 if (pagedownButton != null) {
                     pagedownButton.setTranslationY(translation);
@@ -6314,6 +6318,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     if (chatListView != null) {
                         chatListView.setTranslationY(translationY);
                     }
+                    if (animatedMessagesOverlay != null) {
+                        animatedMessagesOverlay.setTranslationY(translationY);
+                    }
                     if (progressView != null) {
                         progressView.setTranslationY(translationY);
                     }
@@ -6345,6 +6352,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (visibility == GONE) {
                     if (chatListView != null) {
                         chatListView.setTranslationY(0);
+                    }
+                    if (animatedMessagesOverlay != null) {
+                        animatedMessagesOverlay.setTranslationY(0);
                     }
                     if (progressView != null) {
                         progressView.setTranslationY(0);
