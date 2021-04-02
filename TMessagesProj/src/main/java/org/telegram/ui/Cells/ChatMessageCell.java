@@ -49,7 +49,6 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.URLSpan;
-import android.util.Log;
 import android.util.Property;
 import android.util.SparseArray;
 import android.util.StateSet;

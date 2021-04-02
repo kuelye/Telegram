@@ -431,6 +431,10 @@ public class EditTextCaption extends EditTextBoldCursor {
         return offsetY;
     }
 
+    public int getOffsetX() {
+        return xOffset;
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.save();

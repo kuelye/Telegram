@@ -23,10 +23,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.ChatActivityEnterView;
 import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.RecyclerListView;
-import org.w3c.dom.Text;
-
-import static org.telegram.messenger.animation.TextAnimation.X_POSITION_INTERPOLATOR_ID;
-import static org.telegram.messenger.animation.TextAnimation.Y_POSITION_INTERPOLATOR_ID;
 
 public class AnimatedChatMessageCell extends ChatMessageCell {
 
@@ -84,7 +80,6 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
     @Override
     protected void onDraw(Canvas canvas) {
-//        setAlpha(isAnimationStarted ? 0 : 0);
         super.onDraw(canvas);
         checkAnimationStart();
     }
@@ -166,17 +161,16 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         }
     }
 
-    @SuppressWarnings("ConstantConditions")
     private void startAnimation() {
-//        Log.v("GUB", "startAnimation: text=" + getMessageObject().messageText);
         // x
+        EditTextCaption editText = delegate.getChatActivityEnterView().getMessageEditText();
+        int[] editLocation = new int[2];
+        editText.getLocationOnScreen(editLocation);
+        Interpolator xInterpolator = globalAnimation.getXInterpolator();
+        parameters.put(X, new Integer[] { editLocation[0] - textX, 0 });
 
         // y
         Interpolator yInterpolator = globalAnimation.getYInterpolator();
-        EditTextCaption editText = delegate.getChatActivityEnterView().getMessageEditText();
-        editText.getBaseline();
-        int[] editLocation = new int[2];
-        editText.getLocationOnScreen(editLocation);
         int[] realCellLocation = new int[2];
         realCell.getLocationOnScreen(realCellLocation);
         delegate.getAnimatedMessagesOverlay().getLocationOnScreen(startOverlayLocation);
@@ -214,6 +208,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         animator.setDuration(duration);
         animator.addUpdateListener(animation -> {
             float ratio = (float) animation.getAnimatedValue();
+
+            // x
+            setAnimationOffsetX(lerpInt(X, xInterpolator.getInterpolation(ratio)));
 
             // y
             if (!isCorrectionAnimationStarted) {
