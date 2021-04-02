@@ -1,6 +1,13 @@
 package org.telegram.messenger.animation;
 
+import android.util.Log;
 import android.view.animation.Animation;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.telegram.messenger.FileLog;
+import org.telegram.messenger.MessagesController;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,6 +37,18 @@ public class AnimationController {
     private AnimationController() {
         animations.put(AnimationType.BACKGROUND, new BackgroundAnimation());
         animations.put(AnimationType.SHORT_TEXT, new TextAnimation(AnimationType.SHORT_TEXT));
+
+        String savedAnimations = MessagesController.getGlobalMainSettings().getString("animations", null);
+        if (savedAnimations != null) {
+            try {
+                JSONObject jsonObject = new JSONObject(savedAnimations);
+                for (BaseAnimation animation : animations.values()) {
+                    animation.applyJson(jsonObject.getJSONObject(animation.getAnimationType().getJsonKey()));
+                }
+            } catch (JSONException e) {
+                FileLog.e(e);
+            }
+        }
     }
 
     public static BaseAnimation getAnimation(AnimationType type) {
@@ -63,6 +82,26 @@ public class AnimationController {
                 listener.onAnimationChanged();
             }
         }
+    }
+
+    public static void save() {
+        JSONObject jsonObject = getInstance().toJson();
+        String savedAnimations = jsonObject.toString();
+        Log.v("AnimationController", "GUB save: savedAnimations=" + savedAnimations);
+        MessagesController.getGlobalMainSettings().edit().putString("animations", savedAnimations).apply();
+    }
+
+    private JSONObject toJson() {
+        try {
+            JSONObject jsonObject = new JSONObject();
+            for (BaseAnimation animation : animations.values()) {
+                jsonObject.put(animation.getAnimationType().getJsonKey(), animation.toJson());
+            }
+            return jsonObject;
+        } catch (JSONException e) {
+            FileLog.e(e);
+        }
+        return null;
     }
 
     public interface OnAnimationChangedListener {

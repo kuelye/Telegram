@@ -5,6 +5,7 @@ import android.view.View;
 
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.animation.AnimationController;
 import org.telegram.messenger.animation.AnimationType;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -50,6 +51,12 @@ public class ChatAnimationEditorActivity extends BaseChatAnimationActivity {
     @Override
     protected BaseAnimationEditorView createEditorView() {
         return new AnimationEditorView(getParentActivity(), () -> presentFragment(new ChatBackgroundAnimationPreviewActivity()));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        AnimationController.save();
     }
 
     private static class AnimationEditorView extends BaseAnimationEditorView {

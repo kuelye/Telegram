@@ -2,6 +2,10 @@ package org.telegram.messenger.animation;
 
 import androidx.annotation.ColorInt;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.telegram.messenger.FileLog;
 import org.telegram.messenger.R;
 
 public class BackgroundAnimation extends BaseAnimation {
@@ -41,6 +45,31 @@ public class BackgroundAnimation extends BaseAnimation {
 
     public void setColor(int id, @ColorInt int color) {
         colors[id] = color;
+    }
+
+    @Override
+    JSONObject toJson() {
+        try {
+            JSONObject jsonObject = super.toJson(false);
+            jsonObject.put("colors", new JSONArray(colors));
+            return jsonObject;
+        } catch (JSONException e) {
+            FileLog.e(e);
+        }
+        return null;
+    }
+
+    @Override
+    void applyJson(JSONObject jsonObject) {
+        try {
+            super.applyJson(jsonObject);
+            JSONArray jsonColors = jsonObject.getJSONArray("colors");
+            for (int i = 0; i < colors.length; ++i) {
+                colors[i] = jsonColors.getInt(i);
+            }
+        } catch (JSONException e) {
+            FileLog.e(e);
+        }
     }
 
     public static class BackgroundColorsAnimationSetting extends BaseAnimationSetting {
