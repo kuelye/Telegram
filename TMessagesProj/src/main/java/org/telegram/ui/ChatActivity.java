@@ -124,7 +124,9 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.VideoEditedInfo;
+import org.telegram.messenger.animation.AnimationController;
 import org.telegram.messenger.animation.AnimationType;
+import org.telegram.messenger.animation.BaseChatAnimation;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.support.SparseLongArray;
 import org.telegram.messenger.voip.VoIPService;
@@ -4188,6 +4190,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     if (BuildVars.LOGS_ENABLED) {
                         FileLog.d("chatItemAnimator disable notifications");
                     }
+                    setMoveAnimationDuration(ChatActivity.this.getMoveAnimationDuration(220));
                 }
 
                 @Override
@@ -15271,6 +15274,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 if (obj.isOut() && obj.wasJustSent) {
                     AnimationType animationType = null;
+                    Log.v("ChatActivity", "GUB processNewMessages: type=" + obj.type + ", linesCount=" + obj.linesCount);
                     if (obj.type == 0) {
                         if (obj.linesCount > 1) {
                             animationType = LONG_TEXT;
@@ -15279,7 +15283,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                     }
                     if (animationType != null) {
-                        animateEnterMessage(obj, SHORT_TEXT);
+                        animateEnterMessage(obj, animationType);
                     }
                 }
             }
@@ -23063,7 +23067,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             cell.dropAnimationCorrected();
         }
 
-        AnimatedChatMessageCell cell = new AnimatedChatMessageCell(getParentActivity(), message, animationType, new AnimatedChatMessageCell.Delegate() {
+        BaseChatAnimation animation = (BaseChatAnimation) AnimationController.getAnimation(animationType);
+        int duration = getMoveAnimationDuration(animation.getDuration());
+        Log.v("ChatActivity", "GUB animateEnterMessage: animationType=" + animationType + ", duration=" + duration);
+        AnimatedChatMessageCell cell = new AnimatedChatMessageCell(getParentActivity(), message, animation, duration, new AnimatedChatMessageCell.Delegate() {
             @Override
             public void onAnimationStart(AnimatedChatMessageCell cell) {
                 for (int i = 0; i < animatedCells.size(); i++) {
@@ -23100,8 +23107,23 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             public RecyclerListView getChatListView() {
                 return chatListView;
             }
+
+            @Override
+            public int getGlobalRemainingDuration() {
+                return getMoveAnimationDuration(220);
+            }
         });
         animatedCells.put(message.stableId, cell);
         animatedMessagesOverlay.addView(cell);
+    }
+
+    private int getMoveAnimationDuration(int defaultDuration) {
+        int duration = defaultDuration;
+        for (int i = 0; i < animatedCells.size(); i++) {
+            int key = animatedCells.keyAt(i);
+            AnimatedChatMessageCell cell = animatedCells.get(key);
+            duration = Math.max(duration, cell.getRemainingDuration());
+        }
+        return duration;
     }
 }

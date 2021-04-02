@@ -12715,7 +12715,7 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
          *
          * @return The current move duration
          */
-        public long getMoveDuration() {
+        public long getMoveAnimationDuration() {
             return mMoveDuration;
         }
 

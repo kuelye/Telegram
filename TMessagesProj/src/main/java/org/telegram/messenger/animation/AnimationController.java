@@ -37,13 +37,16 @@ public class AnimationController {
     private AnimationController() {
         animations.put(AnimationType.BACKGROUND, new BackgroundAnimation());
         animations.put(AnimationType.SHORT_TEXT, new TextAnimation(AnimationType.SHORT_TEXT));
+        animations.put(AnimationType.LONG_TEXT, new TextAnimation(AnimationType.LONG_TEXT));
 
         String savedAnimations = MessagesController.getGlobalMainSettings().getString("animations", null);
         if (savedAnimations != null) {
             try {
                 JSONObject jsonObject = new JSONObject(savedAnimations);
                 for (BaseAnimation animation : animations.values()) {
-                    animation.applyJson(jsonObject.getJSONObject(animation.getAnimationType().getJsonKey()));
+                    if (jsonObject.has(animation.getAnimationType().getJsonKey())) {
+                        animation.applyJson(jsonObject.getJSONObject(animation.getAnimationType().getJsonKey()));
+                    }
                 }
             } catch (JSONException e) {
                 FileLog.e(e);

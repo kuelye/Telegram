@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -32,7 +33,8 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private final static int TEXT_SIZE = 5;
     private final static int TIME_ALPHA = 6;
 
-    private final AnimationType animationType;
+    private final BaseChatAnimation chatAnimation;
+    private final int duration;
     private final Delegate delegate;
 
     private ChatMessageCell realCell;
@@ -52,9 +54,10 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private boolean isCorrectionAnimationFinished = false;
     private boolean isAnimationDone = false;
 
-    public AnimatedChatMessageCell(Context context, MessageObject obj, AnimationType animationType, Delegate delegate) {
+    public AnimatedChatMessageCell(Context context, MessageObject obj, BaseChatAnimation animation, int duration, Delegate delegate) {
         super(context);
-        this.animationType = animationType;
+        chatAnimation = animation;
+        this.duration = duration;
         this.delegate = delegate;
 
         isAnimated = true;
@@ -110,14 +113,14 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     }
 
     public void checkAnimationFinish() {
-//        Log.v("GUB", "checkAnimationFinish: isAnimationFinished=" + isAnimationFinished + ", getEndY()=" + getEndY() + ", getY()=" + getY());
+        Log.v("GUB", "checkAnimationFinish: isAnimationFinished=" + isAnimationFinished + ", isCorrectionAnimationStarted=" + isCorrectionAnimationStarted + ", isCorrectionAnimationFinished=" + isCorrectionAnimationFinished + ", getEndY()=" + getEndY() + ", getY()=" + getY());
         if (isAnimationFinished && (!isCorrectionAnimationStarted || isCorrectionAnimationFinished) && getEndY() == getY()) {
             endAnimation();
         }
     }
 
     public void endAnimation() {
-//        Log.v("GUB", "endAnimation: text=" + getMessageObject().messageText + ", isAnimationDone=" + isAnimationDone);
+        Log.v("GUB", "endAnimation: text=" + getMessageObject().messageText + ", isAnimationDone=" + isAnimationDone);
         if (isAnimationDone) {
             return;
         }
@@ -136,6 +139,20 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     public void dropAnimationCorrected() {
 //        Log.v("GUB", "dropAnimationCorrected: text=" + getMessageObject().messageText);
         isAnimationCorrected = false;
+    }
+
+    public BaseChatAnimation getChatAnimation() {
+        return chatAnimation;
+    }
+
+    public int getRemainingDuration() {
+        if (animator == null || !isAnimationStarted) {
+            return duration;
+        }
+        if (isAnimationFinished) {
+            return 0;
+        }
+        return (int) (duration * (1 - (float) animator.getAnimatedValue()));
     }
 
     private void checkAnimationStart() {
@@ -184,18 +201,16 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         // alpha
         parameters.put(TIME_ALPHA, new Float[] { 0f, 1f });
 
-        // interpolator
-        BaseChatAnimation chatAnimation = (BaseChatAnimation) AnimationController.getAnimation(animationType);
-
         // animation
         animator = ValueAnimator.ofFloat(0, 1);
-        animator.setDuration(chatAnimation.getDuration());
+        animator.setDuration(duration);
         animator.addUpdateListener(animation -> {
             float ratio = (float) animation.getAnimatedValue();
             // y
-            if (correctionAnimator == null || !correctionAnimator.isRunning()) {
+            if (!isCorrectionAnimationStarted) {
                 int[] overlayLocation = new int[2];
                 delegate.getAnimatedMessagesOverlay().getLocationOnScreen(overlayLocation);
+                Log.v("GUB", "setY1: y=" + lerpInt(Y, ratio));
                 setY(lerpInt(Y, ratio));
             }
 
@@ -253,12 +268,14 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
     private void startCorrectionAnimation() {
         isCorrectionAnimationStarted = true;
+        Log.v("GUB", "startCorrectionAnimation: " + currentMessageObject.messageText + " / " + getY() + " / " + getEndY());
         parameters.put(CORRECTED_Y, new Integer[] { (int) getY(), getEndY() });
 
         correctionAnimator = ValueAnimator.ofFloat(0, 1);
-        correctionAnimator.setDuration(3000);
+        correctionAnimator.setDuration(delegate.getGlobalRemainingDuration());
         correctionAnimator.addUpdateListener(animation -> {
             float ratio = (float) animation.getAnimatedValue();
+            Log.v("GUB", "setY2: y=" + lerpInt(CORRECTED_Y, ratio));
             setY(lerpInt(CORRECTED_Y, ratio));
             invalidate();
         });
@@ -322,5 +339,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         ChatActivityEnterView getChatActivityEnterView();
         FrameLayout getAnimatedMessagesOverlay();
         RecyclerListView getChatListView();
+
+        int getGlobalRemainingDuration();
     }
 }

@@ -2363,7 +2363,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (removalsPending || movesPending || additionsPending || changesPending) {
                     ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, 1f);
                     valueAnimator.addUpdateListener(valueAnimator1 -> listView.invalidate());
-                    valueAnimator.setDuration(getMoveDuration());
+                    valueAnimator.setDuration(getMoveAnimationDuration());
                     valueAnimator.start();
                     animationIndex = getNotificationCenter().setAnimationInProgress(animationIndex, null);
                 }
@@ -2381,7 +2381,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
 
             @Override
-            public long getMoveDuration() {
+            public long getMoveAnimationDuration() {
                 return 220;
             }
 

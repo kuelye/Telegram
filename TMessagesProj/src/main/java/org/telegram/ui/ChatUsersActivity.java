@@ -794,7 +794,7 @@ public class ChatUsersActivity extends BaseFragment implements NotificationCente
             }
 
             @Override
-            public long getMoveDuration() {
+            public long getMoveAnimationDuration() {
                 return 220;
             }
 

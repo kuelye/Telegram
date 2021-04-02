@@ -1701,7 +1701,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             } else if (animationType == ItemTouchHelper.ANIMATION_TYPE_DRAG) {
                 if (movingView != null) {
                     View view = movingView;
-                    AndroidUtilities.runOnUIThread(() -> view.setBackgroundDrawable(null), parentPage.dialogsItemAnimator.getMoveDuration());
+                    AndroidUtilities.runOnUIThread(() -> view.setBackgroundDrawable(null), parentPage.dialogsItemAnimator.getMoveAnimationDuration());
                     movingView = null;
                 }
             }

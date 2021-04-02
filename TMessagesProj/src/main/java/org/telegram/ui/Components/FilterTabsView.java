@@ -766,7 +766,7 @@ public class FilterTabsView extends FrameLayout {
                        listView.invalidate();
                        invalidate();
                    });
-                   valueAnimator.setDuration(getMoveDuration());
+                   valueAnimator.setDuration(getMoveAnimationDuration());
                    valueAnimator.start();
                 }
                 super.runPendingAnimations();
@@ -830,7 +830,7 @@ public class FilterTabsView extends FrameLayout {
                             }
                         });
                         tabView.changeAnimator = valueAnimator;
-                        valueAnimator.setDuration(getMoveDuration());
+                        valueAnimator.setDuration(getMoveAnimationDuration());
                         valueAnimator.start();
                     }
                 }

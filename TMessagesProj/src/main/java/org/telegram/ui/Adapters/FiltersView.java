@@ -126,7 +126,7 @@ public class FiltersView extends RecyclerListView {
             }
 
             @Override
-            public long getMoveDuration() {
+            public long getMoveAnimationDuration() {
                 return 220;
             }
 

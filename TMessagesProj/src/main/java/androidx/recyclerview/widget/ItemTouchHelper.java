@@ -2114,7 +2114,7 @@ public class ItemTouchHelper extends RecyclerView.ItemDecoration
          * <p>
          * Default implementation uses ItemAnimator's duration values. If
          * <code>animationType</code> is {@link #ANIMATION_TYPE_DRAG}, it returns
-         * {@link RecyclerView.ItemAnimator#getMoveDuration()}, otherwise, it returns
+         * {@link RecyclerView.ItemAnimator#getMoveAnimationDuration()}, otherwise, it returns
          * {@link RecyclerView.ItemAnimator#getRemoveDuration()}. If RecyclerView does not have
          * any {@link RecyclerView.ItemAnimator} attached, this method returns
          * {@code DEFAULT_DRAG_ANIMATION_DURATION} or {@code DEFAULT_SWIPE_ANIMATION_DURATION}
@@ -2136,7 +2136,7 @@ public class ItemTouchHelper extends RecyclerView.ItemDecoration
                 return animationType == ANIMATION_TYPE_DRAG ? DEFAULT_DRAG_ANIMATION_DURATION
                         : DEFAULT_SWIPE_ANIMATION_DURATION;
             } else {
-                return animationType == ANIMATION_TYPE_DRAG ? itemAnimator.getMoveDuration()
+                return animationType == ANIMATION_TYPE_DRAG ? itemAnimator.getMoveAnimationDuration()
                         : itemAnimator.getRemoveDuration();
             }
         }

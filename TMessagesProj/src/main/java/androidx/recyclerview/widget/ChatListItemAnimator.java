@@ -6,6 +6,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.os.Build;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
 import android.view.animation.OvershootInterpolator;
@@ -49,6 +50,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 
     private boolean reversePositions;
 
+    private long moveAnimationDuration = 220;
     private OnAllAnimationsDoneListener onAllAnimationsDoneListener;
 
     public ChatListItemAnimator(ChatActivity activity, RecyclerListView listView) {
@@ -102,7 +104,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
                 recyclerListView.invalidate();
             }
         });
-        valueAnimator.setDuration(getRemoveDuration() + getMoveDuration());
+        valueAnimator.setDuration(getRemoveDuration() + getMoveAnimationDuration());
         valueAnimator.start();
     }
 
@@ -188,6 +190,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
         boolean movesPending = !mPendingMoves.isEmpty();
         boolean changesPending = !mPendingChanges.isEmpty();
         boolean additionsPending = !mPendingAdditions.isEmpty();
+        Log.v("ChatListItemAnimator", "GUB runMessageEnterTransition: removals=" + mPendingRemovals.size() + ", moves=" + mPendingMoves.size() + ", changes=" + mPendingChanges.size() + ", additions=" + mPendingAdditions.size());
 
         if (!removalsPending && !movesPending && !additionsPending && !changesPending) {
             return;
@@ -282,7 +285,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
         if (!(holder.itemView instanceof ChatMessageCell && ((ChatMessageCell) holder.itemView).getTransitionParams().ignoreAlpha)) {
             holder.itemView.setAlpha(1);
         }
-        animation.translationY(0).setDuration(getMoveDuration())
+        animation.translationY(0).setDuration(getMoveAnimationDuration())
                 .setInterpolator(translationInterpolator)
                 .setListener(new AnimatorListenerAdapter() {
                     @Override
@@ -782,7 +785,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
         if (translationInterpolator != null) {
             animatorSet.setInterpolator(translationInterpolator);
         }
-        animatorSet.setDuration(getMoveDuration());
+        animatorSet.setDuration(getMoveAnimationDuration());
         animatorSet.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animator) {
@@ -1382,13 +1385,13 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
     }
 
     @Override
-    public long getMoveDuration() {
-        return 3000; // TODO [CONTEST]
+    public long getMoveAnimationDuration() {
+        return moveAnimationDuration;
     }
 
     @Override
     public long getChangeDuration() {
-        return 3000; // TODO [CONTEST]
+        return 220;
     }
 
     public void runOnAnimationEnd(Runnable runnable) {
@@ -1473,6 +1476,10 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 
     interface OnAllAnimationsDoneListener {
         void onAllAnimationsDone();
+    }
+
+    public void setMoveAnimationDuration(long duration) {
+        moveAnimationDuration = duration;
     }
 }
 

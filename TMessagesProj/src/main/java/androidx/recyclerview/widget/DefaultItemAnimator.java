@@ -187,7 +187,7 @@ public class DefaultItemAnimator extends SimpleItemAnimator {
             };
             if (delayAnimations && (removalsPending || movesPending || changesPending)) {
                 long removeDuration = removalsPending ? getRemoveDuration() : 0;
-                long moveDuration = movesPending ? getMoveDuration() : 0;
+                long moveDuration = movesPending ? getMoveAnimationDuration() : 0;
                 long changeDuration = changesPending ? getChangeDuration() : 0;
                 long totalDelay = getAddAnimationDelay(removeDuration, moveDuration, changeDuration);
                 View view = additions.get(0).itemView;
@@ -328,7 +328,7 @@ public class DefaultItemAnimator extends SimpleItemAnimator {
         if (translationInterpolator != null) {
             animation.setInterpolator(translationInterpolator);
         }
-        animation.setDuration(getMoveDuration()).setListener(new AnimatorListenerAdapter() {
+        animation.setDuration(getMoveAnimationDuration()).setListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animator) {
                 dispatchMoveStarting(holder);
