@@ -120,11 +120,12 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     }
 
     public void animate(Interpolator interpolator) {
+        Log.v("AnimatedBackgroundView", "GUB animate: interpolator=" + interpolator);
         if (valueAnimator != null && valueAnimator.isRunning()) return;
         float startState = state;
-        valueAnimator = ValueAnimator.ofFloat(0.0f, 0.5f).setDuration(interpolator.getDuration());
+        valueAnimator = ValueAnimator.ofFloat(0.0f, 1f).setDuration(interpolator.getDuration());
         valueAnimator.addUpdateListener(animation -> {
-            state = startState + (float) animation.getAnimatedValue();
+            state = startState + 0.5f * interpolator.getInterpolation((float) animation.getAnimatedValue());
             recalculatePoints();
             recalculateBitmap();
             invalidate();
@@ -213,7 +214,6 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     }
 
     private Bitmap generateBitmap() {
-        Log.v("GUB", "generateBitmap: start");
         if (getWidth() == 0 || getHeight() == 0) {
             return null;
         }

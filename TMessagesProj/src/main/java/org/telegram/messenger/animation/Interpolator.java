@@ -6,6 +6,8 @@ import org.json.JSONObject;
 import org.telegram.messenger.FileLog;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 
+import java.util.Arrays;
+
 public class Interpolator {
 
     public final static int[] DURATIONS = { 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1500, 2000, 3000 };
@@ -82,5 +84,14 @@ public class Interpolator {
         } catch (JSONException e) {
             FileLog.e(e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Interpolator{" +
+                "duration=" + duration +
+                ", cs=" + Arrays.toString(cs) +
+                ", ts=" + Arrays.toString(ts) +
+                '}';
     }
 }

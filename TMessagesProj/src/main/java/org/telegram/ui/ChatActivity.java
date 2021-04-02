@@ -126,6 +126,7 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.VideoEditedInfo;
 import org.telegram.messenger.animation.AnimationController;
 import org.telegram.messenger.animation.AnimationType;
+import org.telegram.messenger.animation.BackgroundAnimation;
 import org.telegram.messenger.animation.BaseChatAnimation;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.support.SparseLongArray;
@@ -164,6 +165,7 @@ import org.telegram.ui.Cells.MentionCell;
 import org.telegram.ui.Cells.StickerCell;
 import org.telegram.ui.Cells.TextSelectionHelper;
 import org.telegram.ui.Components.AlertsCreator;
+import org.telegram.ui.Components.AnimatedBackgroundView;
 import org.telegram.ui.Components.AnimatedFileDrawable;
 import org.telegram.ui.Components.AnimationProperties;
 import org.telegram.ui.Components.BackupImageView;
@@ -347,6 +349,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private View emojiButtonRed;
     private FrameLayout pinnedMessageView;
     private View blurredView;
+    private AnimatedBackgroundView animatedBackgroundView;
     private PinnedLineView pinnedLineView;
     private boolean setPinnedTextTranslationX;
     private AnimatorSet pinnedMessageViewAnimator;
@@ -746,6 +749,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private boolean scrollByTouch;
 
     private SparseArray<AnimatedChatMessageCell> animatedCells = new SparseArray<>();
+    private boolean isBackgroundAnimatedWhenChatOpened = false;
 
     public float getChatListViewPadding() {
         return chatListViewPaddingTop;
@@ -1725,6 +1729,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         cantSaveMessagesCount = 0;
         canSaveMusicCount = 0;
         canSaveDocumentsCount = 0;
+        isBackgroundAnimatedWhenChatOpened = false;
 
         hasOwnBackground = true;
         if (chatAttachAlert != null) {
@@ -2759,6 +2764,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         int contentWidthSpec = MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY);
                         int contentHeightSpec = MeasureSpec.makeMeasureSpec(allHeight, MeasureSpec.EXACTLY);
                         child.measure(contentWidthSpec, contentHeightSpec);
+                    } else if (child == animatedBackgroundView) {
+                        int contentWidthSpec = LayoutHelper.measureExactly(widthSize);
+                        int h = heightSize - listViewTopHeight - (inPreviewMode && Build.VERSION.SDK_INT >= 21 ? AndroidUtilities.statusBarHeight : 0);
+                        if (keyboardSize > AndroidUtilities.dp(20) && getLayoutParams().height < 0) {
+                            h += keyboardSize;
+                        }
+                        child.measure(contentWidthSpec, LayoutHelper.measureExactly(Math.max(AndroidUtilities.dp(10), h)));
                     } else if (child == chatListView || child == animatedMessagesOverlay) {
                         int contentWidthSpec = MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY);
                         int h = heightSize - listViewTopHeight - (inPreviewMode && Build.VERSION.SDK_INT >= 21 ? AndroidUtilities.statusBarHeight : 0);
@@ -3045,6 +3057,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
 
         contentView.setBackgroundImage(Theme.getCachedWallpaper(), Theme.isWallpaperMotion());
+
+        animatedBackgroundView = new AnimatedBackgroundView(context);
+        contentView.addView(animatedBackgroundView);
 
         emptyViewContainer = new FrameLayout(context);
         emptyViewContainer.setVisibility(View.INVISIBLE);
@@ -5065,6 +5080,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             } else if (returnToMessageId > 0) {
                 scrollToMessageId(returnToMessageId, 0, true, returnToLoadIndex, true, 0);
             } else {
+                animateBackground(BackgroundAnimation.JUMP_TO_MESSAGE_INTERPOLATOR_ID);
                 scrollToLastMessage();
                 if (!pinnedMessageIds.isEmpty()) {
                     forceScrollToFirst = true;
@@ -7469,6 +7485,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         float topPanelViewH = Math.max(0, AndroidUtilities.dp(48) + topChatPanelViewOffset);
 
+        if (animatedBackgroundView != null) {
+            animatedBackgroundView.setTranslationY(contentPanTranslation + contentPaddingTop + topPanelViewH);
+        }
         if (pinnedMessageView != null) {
             pinnedMessageView.setTranslationY(contentPanTranslation + pinnedMessageEnterOffset + contentPaddingTop + topPanelViewH);
         }
@@ -10551,6 +10570,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
             return;
         }
+
+        animateBackground(BackgroundAnimation.JUMP_TO_MESSAGE_INTERPOLATOR_ID);
 
         forceNextPinnedMessageId = Math.abs(forcePinnedMessageId);
         forceScrollToFirst = forcePinnedMessageId > 0;
@@ -17566,6 +17587,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         checkBotCommands();
         updateTitle();
         showGigagroupConvertAlert();
+
+        if (!isBackgroundAnimatedWhenChatOpened) {
+            isBackgroundAnimatedWhenChatOpened = true;
+            animateBackground(BackgroundAnimation.OPEN_CHAT_INTERPOLATOR_ID);
+        }
     }
 
     public void checkAdjustResize() {
@@ -23061,6 +23087,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             return;
         }
 
+        animateBackground(BackgroundAnimation.SEND_MESSAGE_INTERPOLATOR_ID);
+
         for (int i = 0; i < animatedCells.size(); i++) {
             int key = animatedCells.keyAt(i);
             AnimatedChatMessageCell cell = animatedCells.get(key);
@@ -23125,5 +23153,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             duration = Math.max(duration, cell.getRemainingDuration());
         }
         return duration;
+    }
+
+    private void animateBackground(int animationId) {
+        if (animatedBackgroundView != null) {
+            animatedBackgroundView.animate(AnimationController.getBackgroundAnimation().getInterpolator(animationId));
+        }
     }
 }
