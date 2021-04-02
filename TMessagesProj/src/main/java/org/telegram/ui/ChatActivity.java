@@ -4189,7 +4189,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 @Override
                 protected void onAllAnimationsDone() {
                     super.onAllAnimationsDone();
-                    Log.v("GUB", "onAllAnimationsDone");
+//                    Log.v("GUB", "onAllAnimationsDone");
                     if (finishRunnable != null) {
                         AndroidUtilities.cancelRunOnUIThread(finishRunnable);
                     }
@@ -21925,7 +21925,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                     }
 
-                    AnimatedChatMessageCell animatedCell = animatedCells.get(message.getId());
+                    AnimatedChatMessageCell animatedCell = animatedCells.get(message.stableId);
                     if (animatedCell != null) {
                         animatedCell.setRealCell(messageCell);
                     }
@@ -23064,7 +23064,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             @Override
             public void onAnimationEnd(AnimatedChatMessageCell cell) {
                 animatedMessagesOverlay.removeView(cell);
-                animatedCells.remove(cell.getMessageObject().getId());
+                animatedCells.remove(cell.getMessageObject().stableId);
             }
 
             @Override
@@ -23087,7 +23087,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 return chatListView;
             }
         });
-        animatedCells.put(message.getId(), cell);
+        animatedCells.put(message.stableId, cell);
         animatedMessagesOverlay.addView(cell);
     }
 }

@@ -42,9 +42,11 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
     private boolean isRealCellLayoutDone = false;
     private boolean isAnimationCorrected = true;
+    private boolean isAnimationStarted = true;
     private boolean isAnimationFinished = false;
     private boolean isCorrectionAnimationStarted = false;
     private boolean isCorrectionAnimationFinished = false;
+    private boolean isAnimationDone = false;
 
     public AnimatedChatMessageCell(Context context, MessageObject obj, Delegate delegate) {
         super(context);
@@ -68,13 +70,13 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        Theme.chat_msgTextPaint.setTextSize(AndroidUtilities.dp(SharedConfig.fontSize));
+//        setAlpha(isAnimationStarted ? 0 : 0);
         super.onDraw(canvas);
         checkAnimationStart();
     }
 
     public void setRealCell(ChatMessageCell cell) {
-        Log.v("GUB", "setRealCell: text=" + cell.getMessageObject().messageText + ", isDrawn=" + isDrawn);
+//        Log.v("GUB", "setRealCell: text=" + cell.getMessageObject().messageText + ", isDrawn=" + isDrawn);
         if (realCell != cell) {
             realCell = cell;
             realCell.setHiddenBecauseAnimated(true);
@@ -90,8 +92,8 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     }
 
     public void correctAnimation() {
-        Log.v("GUB", "correctAnimation: text=" + getMessageObject().messageText + ", isAnimationCorrected=" + isAnimationCorrected);
-        if (!isAnimationCorrected) {
+//        Log.v("GUB", "correctAnimation: text=" + getMessageObject().messageText + ", isAnimationCorrected=" + isAnimationCorrected);
+        if (!isAnimationCorrected && !isAnimationDone) {
             isAnimationCorrected = true;
             if (correctionAnimator != null) {
                 correctionAnimator.cancel();
@@ -102,18 +104,19 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     }
 
     public void checkAnimationFinish() {
-        Log.v("GUB", "checkAnimationFinish: isAnimationFinished=" + isAnimationFinished + ", getEndY()=" + getEndY() + ", getY()=" + getY());
+//        Log.v("GUB", "checkAnimationFinish: isAnimationFinished=" + isAnimationFinished + ", getEndY()=" + getEndY() + ", getY()=" + getY());
         if (isAnimationFinished && (!isCorrectionAnimationStarted || isCorrectionAnimationFinished) && getEndY() == getY()) {
             endAnimation();
         }
     }
 
     public void endAnimation() {
-        Log.v("GUB", "endAnimation: text=" + getMessageObject().messageText);
-        if (animator == null) {
+//        Log.v("GUB", "endAnimation: text=" + getMessageObject().messageText + ", isAnimationDone=" + isAnimationDone);
+        if (isAnimationDone) {
             return;
         }
 
+        isAnimationDone = true;
         cancelAnimation();
         cancelCorrectionAnimation();
         AndroidUtilities.runOnUIThread(() -> {
@@ -125,18 +128,19 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     }
 
     public void dropAnimationCorrected() {
-        Log.v("GUB", "dropAnimationCorrected: text=" + getMessageObject().messageText);
+//        Log.v("GUB", "dropAnimationCorrected: text=" + getMessageObject().messageText);
         isAnimationCorrected = false;
     }
 
     private void checkAnimationStart() {
-        if (animator == null && isDrawn && isRealCellLayoutDone && realCell != null) {
+        if (animator == null && isDrawn && !isAnimationDone && isRealCellLayoutDone && realCell != null) {
             startAnimation();
         }
     }
 
     private void startAnimation() {
-        Log.v("GUB", "startAnimation: text=" + getMessageObject().messageText);
+//        Log.v("GUB", "startAnimation: text=" + getMessageObject().messageText);
+
         // x
 
 
@@ -154,7 +158,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         setY((Integer) parameters.get(Y)[0]);
 
         // bubble
-        Log.v("GUB", "realCell.backgroundWidth=" + realCell.backgroundWidth + ", location[0]=" + editLocation[0] + ", ?=" + backgroundDrawableTop + " / " + getBackgroundDrawable().getBounds().top);
+//        Log.v("GUB", "realCell.backgroundWidth=" + realCell.backgroundWidth + ", location[0]=" + editLocation[0] + ", ?=" + backgroundDrawableTop + " / " + getBackgroundDrawable().getBounds().top);
         parameters.put(BUBBLE_BACKGROUND_WIDTH, new Integer[] {
                 realCell.backgroundWidth - editLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(11) + getExtraTextX(),
                 realCell.backgroundWidth
@@ -167,8 +171,10 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         });
 
         // colors
-        int backgroundColor = Theme.getColor(Theme.key_chat_outBubble);
-        parameters.put(COLOR_BACKGROUND, new Integer[] { ColorUtils.setAlphaComponent(backgroundColor, 128), backgroundColor });
+        int endBackgroundColor = Theme.getColor(Theme.key_chat_outBubble);
+        int startBackgroundColor = ColorUtils.setAlphaComponent(endBackgroundColor, 0);
+        parameters.put(COLOR_BACKGROUND, new Integer[] { startBackgroundColor, endBackgroundColor });
+        backgroundPaint.setColor(startBackgroundColor);
 
         // animation
         animator = ValueAnimator.ofFloat(0, 1);
@@ -200,8 +206,8 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         animator.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
-                //Log.v("GUB", "onAnimationStart: text=" + getMessageObject().messageText);
-                isAnimationFinished = false;
+//                Log.v("GUB", "onAnimationStart: text=" + getMessageObject().messageText);
+                isAnimationStarted = true;
                 AndroidUtilities.runOnUIThread(() -> delegate.onAnimationStart(AnimatedChatMessageCell.this));
             }
 
