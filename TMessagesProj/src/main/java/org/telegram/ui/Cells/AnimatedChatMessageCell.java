@@ -4,7 +4,6 @@ import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -15,6 +14,9 @@ import androidx.core.graphics.ColorUtils;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.animation.AnimationController;
+import org.telegram.messenger.animation.AnimationType;
+import org.telegram.messenger.animation.BaseChatAnimation;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.ChatActivityEnterView;
 import org.telegram.ui.Components.EditTextCaption;
@@ -30,6 +32,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private final static int TEXT_SIZE = 5;
     private final static int TIME_ALPHA = 6;
 
+    private final AnimationType animationType;
     private final Delegate delegate;
 
     private ChatMessageCell realCell;
@@ -49,12 +52,14 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private boolean isCorrectionAnimationFinished = false;
     private boolean isAnimationDone = false;
 
-    public AnimatedChatMessageCell(Context context, MessageObject obj, Delegate delegate) {
+    public AnimatedChatMessageCell(Context context, MessageObject obj, AnimationType animationType, Delegate delegate) {
         super(context);
+        this.animationType = animationType;
+        this.delegate = delegate;
+
         isAnimated = true;
 
         setMessageObject(obj, getCurrentMessagesGroup(), isPinnedBottom(), isPinnedTop());
-        this.delegate = delegate;
         setDelegate(new ChatMessageCell.ChatMessageCellDelegate() {
             @Override
             public TextSelectionHelper.ChatListTextSelectionHelper getTextSelectionHelper() {
@@ -141,7 +146,6 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
     private void startAnimation() {
 //        Log.v("GUB", "startAnimation: text=" + getMessageObject().messageText);
-
         // x
 
 
@@ -180,9 +184,12 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         // alpha
         parameters.put(TIME_ALPHA, new Float[] { 0f, 1f });
 
+        // interpolator
+        BaseChatAnimation chatAnimation = (BaseChatAnimation) AnimationController.getAnimation(animationType);
+
         // animation
         animator = ValueAnimator.ofFloat(0, 1);
-        animator.setDuration(3000);
+        animator.setDuration(chatAnimation.getDuration());
         animator.addUpdateListener(animation -> {
             float ratio = (float) animation.getAnimatedValue();
             // y

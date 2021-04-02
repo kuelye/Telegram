@@ -124,6 +124,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.VideoEditedInfo;
+import org.telegram.messenger.animation.AnimationType;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.support.SparseLongArray;
 import org.telegram.messenger.voip.VoIPService;
@@ -234,6 +235,9 @@ import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.telegram.messenger.animation.AnimationType.LONG_TEXT;
+import static org.telegram.messenger.animation.AnimationType.SHORT_TEXT;
 
 @SuppressWarnings("unchecked")
 public class ChatActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, DialogsActivity.DialogsActivityDelegate, LocationActivity.LocationActivityDelegate, ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate {
@@ -15266,7 +15270,17 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     updateChat = true;
                 }
                 if (obj.isOut() && obj.wasJustSent) {
-                    animateEnterMessage(obj);
+                    AnimationType animationType = null;
+                    if (obj.type == 0) {
+                        if (obj.linesCount > 1) {
+                            animationType = LONG_TEXT;
+                        } else {
+                            animationType = SHORT_TEXT;
+                        }
+                    }
+                    if (animationType != null) {
+                        animateEnterMessage(obj, SHORT_TEXT);
+                    }
                 }
             }
             if (webpagesToReload != null) {
@@ -23038,7 +23052,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         return themeDescriptions;
     }
 
-    private void animateEnterMessage(MessageObject message) {
+    private void animateEnterMessage(MessageObject message, AnimationType animationType) {
         if (getParentActivity() == null) {
             return;
         }
@@ -23049,7 +23063,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             cell.dropAnimationCorrected();
         }
 
-        AnimatedChatMessageCell cell = new AnimatedChatMessageCell(getParentActivity(), message, new AnimatedChatMessageCell.Delegate() {
+        AnimatedChatMessageCell cell = new AnimatedChatMessageCell(getParentActivity(), message, animationType, new AnimatedChatMessageCell.Delegate() {
             @Override
             public void onAnimationStart(AnimatedChatMessageCell cell) {
                 for (int i = 0; i < animatedCells.size(); i++) {
