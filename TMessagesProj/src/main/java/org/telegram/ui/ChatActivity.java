@@ -2753,7 +2753,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         int contentWidthSpec = MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY);
                         int contentHeightSpec = MeasureSpec.makeMeasureSpec(allHeight, MeasureSpec.EXACTLY);
                         child.measure(contentWidthSpec, contentHeightSpec);
-                    } else if (child == chatListView) {
+                    } else if (child == chatListView || child == animatedMessagesOverlay) {
                         int contentWidthSpec = MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY);
                         int h = heightSize - listViewTopHeight - (inPreviewMode && Build.VERSION.SDK_INT >= 21 ? AndroidUtilities.statusBarHeight : 0);
                         if (keyboardSize > AndroidUtilities.dp(20) && getLayoutParams().height < 0) {
@@ -2968,7 +2968,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                     } else if (child == gifHintTextView || child == voiceHintTextView || child == mediaBanTooltip) {
                         childTop -= inputFieldHeight;
-                    } else if (child == chatListView || child == floatingDateView || child == infoTopView) {
+                    } else if (child == chatListView || child == floatingDateView || child == infoTopView || child == animatedMessagesOverlay) {
                         if (!inPreviewMode) {
                             childTop -= (inputFieldHeight - AndroidUtilities.dp(51));
                         }

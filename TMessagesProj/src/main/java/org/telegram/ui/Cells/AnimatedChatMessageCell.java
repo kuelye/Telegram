@@ -33,13 +33,14 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private ValueAnimator animator;
     private ChatMessageCell realCell;
 
-    private final int[] overlayLocation = new int[2];
+    private final int[] startOverlayLocation = new int[2];
     private final int[] chatLocation = new int[2];
 
     private SparseArray<Object[]> parameters = new SparseArray<>();
 
     private boolean isRealCellLayoutDone = false;
     private boolean isAnimationCorrected = true;
+    private boolean isAnimationFinished = false;
 
     public AnimatedChatMessageCell(Context context, MessageObject obj, Delegate delegate) {
         super(context);
@@ -120,6 +121,13 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         }
     }
 
+    private void checkAnimationFinish() {
+        Log.v("GUB", "checkAnimationFinish: isAnimationFinished=" + isAnimationFinished + ", getEndY()=" + getEndY() + ", getY()=" + getY());
+        if (isAnimationFinished && getEndY() == getY()) {
+            endAnimation();
+        }
+    }
+
     private void startAnimation(boolean fromCurrentY) {
         Log.v("GUB", "startAnimation: text=" + getMessageObject().messageText);
         // x
@@ -132,16 +140,14 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         editText.getLocationOnScreen(editLocation);
         int[] realCellLocation = new int[2];
         realCell.getLocationOnScreen(realCellLocation);
-        delegate.getAnimatedMessagesOverlay().getLocationOnScreen(overlayLocation);
+        delegate.getAnimatedMessagesOverlay().getLocationOnScreen(startOverlayLocation);
         delegate.getChatListView().getLocationOnScreen(chatLocation);
-        parameters.put(Y, new Integer[] {
-                fromCurrentY ? (int) getY() : editLocation[1] - chatLocation[1],
-                realCell.getTop() - AndroidUtilities.dp(1)
-        });
+        int startY = fromCurrentY ? (int) getY() : editLocation[1] + editText.getBaseline() - startOverlayLocation[1] - getBottomBaseline();
+        parameters.put(Y, new Integer[] { startY, getEndY() });
         setY((Integer) parameters.get(Y)[0]);
 
         // bubble
-        Log.v("GUB", "realCell.backgroundWidth=" + realCell.backgroundWidth + ", location[0]=" + editLocation[0] + ", ?=" + backgroundDrawableLeft);
+        Log.v("GUB", "realCell.backgroundWidth=" + realCell.backgroundWidth + ", location[0]=" + editLocation[0] + ", ?=" + backgroundDrawableTop + " / " + getBackgroundDrawable().getBounds().top);
         parameters.put(BUBBLE_BACKGROUND_WIDTH, new Integer[] {
                 realCell.backgroundWidth - editLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(11) + getExtraTextX(),
                 realCell.backgroundWidth
@@ -155,7 +161,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
         // colors
         int backgroundColor = Theme.getColor(Theme.key_chat_outBubble);
-        parameters.put(COLOR_BACKGROUND, new Integer[] { ColorUtils.setAlphaComponent(backgroundColor, 0), backgroundColor });
+        parameters.put(COLOR_BACKGROUND, new Integer[] { ColorUtils.setAlphaComponent(backgroundColor, 128), backgroundColor });
 
         // animation
         animator = ValueAnimator.ofFloat(0, 1);
@@ -163,13 +169,18 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         animator.addUpdateListener(animation -> {
             float ratio = (float) animation.getAnimatedValue();
             // y
+            int[] overlayLocation = new int[2];
             delegate.getAnimatedMessagesOverlay().getLocationOnScreen(overlayLocation);
-            setY(chatLocation[1] - overlayLocation[1] + lerpInt(Y, ratio));
+            setY(lerpInt(Y, ratio));
 
             // bubble
             backgroundWidth = (int) lerpInt(BUBBLE_BACKGROUND_WIDTH, ratio);
 
             // text
+            for (int i = 0; i < currentMessageObject.textLayoutBlocks.size(); ++i) {
+                MessageObject.TextLayoutBlock block = currentMessageObject.textLayoutBlocks.get(i);
+                block.textYOffset = 0;
+            }
             textSize = lerpFloat(TEXT_SIZE, ratio);
 
             // color
@@ -181,12 +192,14 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             @Override
             public void onAnimationStart(Animator animation) {
                 //Log.v("GUB", "onAnimationStart: text=" + getMessageObject().messageText);
+                isAnimationFinished = false;
                 AndroidUtilities.runOnUIThread(() -> delegate.onAnimationStart(AnimatedChatMessageCell.this));
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                // stub
+                isAnimationFinished = true;
+                checkAnimationFinish();
             }
 
             @Override
@@ -216,6 +229,10 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private int blendColor(int id, float ratio) {
         Integer[] colors = (Integer[]) parameters.get(id);
         return ColorUtils.blendARGB(colors[0], colors[1], ratio);
+    }
+
+    private int getEndY() {
+        return realCell.getTop() - AndroidUtilities.dp(1);
     }
 
     public interface Delegate {

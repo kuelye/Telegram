@@ -49,6 +49,7 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.URLSpan;
+import android.util.Log;
 import android.util.Property;
 import android.util.SparseArray;
 import android.util.StateSet;
@@ -310,7 +311,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     protected int textX;
     private int unmovedTextX;
-    private int textY;
+    protected int textY;
     private int totalHeight;
     private int additionalTimeOffsetY;
     private int keyboardHeight;
@@ -562,7 +563,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int widthForButtons;
     private int pressedBotButton;
 
-    private MessageObject currentMessageObject;
+    protected MessageObject currentMessageObject;
     private MessageObject messageObjectToSet;
     private MessageObject.GroupedMessages groupedMessagesToSet;
     private boolean topNearToSet;
@@ -606,8 +607,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private Theme.MessageDrawable currentBackgroundSelectedDrawable;
     protected int backgroundDrawableLeft;
     private int backgroundDrawableRight;
-    private int backgroundDrawableTop;
-    private int backgroundDrawableBottom;
+    protected int backgroundDrawableTop;
+    protected int backgroundDrawableBottom;
     private int viaWidth;
     private int viaNameWidth;
     private TypefaceSpan viaSpan1;
@@ -10227,10 +10228,23 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.restoreToCount(restore);
         }
         updateSelectionTextPosition();
+
         isDrawn = true;
         if (onDrawnListener != null) {
             onDrawnListener.onDrawn();
         }
+
+        // TODO [CONTEST]
+//        Paint textPaint = new Paint();
+//        textPaint.setColor(Color.RED);
+//        if (getMessageObject() != null) {
+//            for (MessageObject.TextLayoutBlock block : currentMessageObject.textLayoutBlocks) {
+//                for (int i = 0; i < block.textLayout.getLineCount(); ++i) {
+//                    int y = (int) (textY + block.textYOffset + block.textLayout.getLineBaseline(i));
+//                    canvas.drawLine(0, y, getWidth(), y, textPaint);
+//                }
+//            }
+//        }
     }
 
     public void drawOutboundsContent(Canvas canvas) {
@@ -13883,6 +13897,17 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     protected void setHiddenBecauseAnimated(boolean hidden) {
         isHiddenBecauseAnimated = hidden;
         invalidate();
+    }
+
+    protected int getBottomBaseline() {
+        if (currentMessageObject == null || currentMessageObject.textLayoutBlocks.size() == 0) {
+            return 0;
+        }
+        MessageObject.TextLayoutBlock block = currentMessageObject.textLayoutBlocks.get(currentMessageObject.textLayoutBlocks.size() - 1);
+        if (block.textLayout.getLineCount() == 0) {
+            return 0;
+        }
+        return (int) (textY + block.textYOffset + block.textLayout.getLineBaseline(block.textLayout.getLineCount() - 1));
     }
 
     interface OnDrawnListener {
