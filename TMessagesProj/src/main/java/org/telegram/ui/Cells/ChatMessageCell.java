@@ -783,6 +783,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     protected OnDrawnListener onDrawnListener = null;
     protected boolean isDrawn = false;
     protected float textSize = AndroidUtilities.dp(SharedConfig.fontSize);
+    protected float timeAlphaFactor = 1;
 
     public ChatMessageCell(Context context) {
         super(context);
@@ -11053,7 +11054,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     public void drawTime(Canvas canvas, float alpha, boolean fromParent) {
         for (int i = 0; i < 2; i++) {
-            float curentAplha = alpha;
+            float currentAlpha = alpha * timeAlphaFactor;
             if (i == 0 && isDrawSelectionBackground() && currentSelectedBackgroundAlpha == 1f && !shouldDrawTimeOnMedia()) {
                 continue;
             } else if (i == 1 && ((!isDrawSelectionBackground() && currentSelectedBackgroundAlpha == 0) || shouldDrawTimeOnMedia())) {
@@ -11061,21 +11062,21 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             boolean drawSelectionBackground = i == 1;
             if (i == 1) {
-                curentAplha *= currentSelectedBackgroundAlpha;
+                currentAlpha *= currentSelectedBackgroundAlpha;
             } else if (!shouldDrawTimeOnMedia()){
-                curentAplha *= (1f - currentSelectedBackgroundAlpha);
+                currentAlpha *= (1f - currentSelectedBackgroundAlpha);
             }
             if (transitionParams.animateShouldDrawTimeOnMedia && transitionParams.animateChangeProgress != 1f) {
                 if (shouldDrawTimeOnMedia()) {
                     overideShouldDrawTimeOnMedia = 1;
-                    drawTimeInternal(canvas, curentAplha * transitionParams.animateChangeProgress, fromParent, this.timeX, timeLayout, timeWidth, drawSelectionBackground);
+                    drawTimeInternal(canvas, currentAlpha * transitionParams.animateChangeProgress, fromParent, this.timeX, timeLayout, timeWidth, drawSelectionBackground);
                     overideShouldDrawTimeOnMedia = 2;
-                    drawTimeInternal(canvas, curentAplha * (1f - transitionParams.animateChangeProgress), fromParent, transitionParams.animateFromTimeX, transitionParams.animateTimeLayout, transitionParams.animateTimeWidth, drawSelectionBackground);
+                    drawTimeInternal(canvas, currentAlpha * (1f - transitionParams.animateChangeProgress), fromParent, transitionParams.animateFromTimeX, transitionParams.animateTimeLayout, transitionParams.animateTimeWidth, drawSelectionBackground);
                 } else {
                     overideShouldDrawTimeOnMedia = 2;
-                    drawTimeInternal(canvas, curentAplha * transitionParams.animateChangeProgress, fromParent, this.timeX, timeLayout, timeWidth, drawSelectionBackground);
+                    drawTimeInternal(canvas, currentAlpha * transitionParams.animateChangeProgress, fromParent, this.timeX, timeLayout, timeWidth, drawSelectionBackground);
                     overideShouldDrawTimeOnMedia = 1;
-                    drawTimeInternal(canvas, curentAplha * (1f - transitionParams.animateChangeProgress), fromParent, transitionParams.animateFromTimeX, transitionParams.animateTimeLayout, transitionParams.animateTimeWidth, drawSelectionBackground);
+                    drawTimeInternal(canvas, currentAlpha * (1f - transitionParams.animateChangeProgress), fromParent, transitionParams.animateFromTimeX, transitionParams.animateTimeLayout, transitionParams.animateTimeWidth, drawSelectionBackground);
                 }
                 overideShouldDrawTimeOnMedia = 0;
             } else {
@@ -11088,7 +11089,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     timeX = this.timeX + transitionParams.deltaRight;
                     timeWidth = this.timeWidth;
                 }
-                drawTimeInternal(canvas, curentAplha, fromParent, timeX, timeLayout, timeWidth, drawSelectionBackground);
+                drawTimeInternal(canvas, currentAlpha, fromParent, timeX, timeLayout, timeWidth, drawSelectionBackground);
             }
         }
 

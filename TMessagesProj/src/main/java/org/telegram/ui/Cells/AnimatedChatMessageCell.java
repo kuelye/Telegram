@@ -28,6 +28,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private final static int COLOR_BACKGROUND = 3;
     private final static int BUBBLE_BACKGROUND_WIDTH = 4;
     private final static int TEXT_SIZE = 5;
+    private final static int TIME_ALPHA = 6;
 
     private final Delegate delegate;
 
@@ -176,6 +177,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         parameters.put(COLOR_BACKGROUND, new Integer[] { startBackgroundColor, endBackgroundColor });
         backgroundPaint.setColor(startBackgroundColor);
 
+        // alpha
+        parameters.put(TIME_ALPHA, new Float[] { 0f, 1f });
+
         // animation
         animator = ValueAnimator.ofFloat(0, 1);
         animator.setDuration(3000);
@@ -200,6 +204,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
             // color
             backgroundPaint.setColor(blendColor(COLOR_BACKGROUND, ratio));
+
+            // time
+            timeAlphaFactor = lerpFloat(TIME_ALPHA, ratio);
 
             invalidate();
         });
