@@ -55,6 +55,7 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.URLSpan;
+import android.util.Log;
 import android.util.LongSparseArray;
 import android.util.Property;
 import android.util.SparseArray;
@@ -146,6 +147,7 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Adapters.MentionsAdapter;
 import org.telegram.ui.Adapters.MessagesSearchAdapter;
 import org.telegram.ui.Adapters.StickersAdapter;
+import org.telegram.ui.Cells.AnimatedChatMessageCell;
 import org.telegram.ui.Cells.BotHelpCell;
 import org.telegram.ui.Cells.BotSwitchCell;
 import org.telegram.ui.Cells.ChatActionCell;
@@ -384,6 +386,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private boolean showPinBulletin;
     private int pinBullerinTag;
     private boolean openKeyboardOnAttachMenuClose;
+    private FrameLayout animatedMessagesOverlay;
 
     private MessageObject hintMessageObject;
     private int hintMessageType;
@@ -735,6 +738,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private Runnable cancelFixedPositionRunnable;
     private boolean invalidateMessagesVisiblePart;
     private boolean scrollByTouch;
+
+    private SparseArray<AnimatedChatMessageCell> animatedCells = new SparseArray<>();
 
     public float getChatListViewPadding() {
         return chatListViewPaddingTop;
@@ -2994,6 +2999,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             childTop -= keyboardSize;
                         }
                     }
+
                     child.layout(childLeft, childTop, childLeft + width, childTop + height);
                 }
 
@@ -4183,6 +4189,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 @Override
                 protected void onAllAnimationsDone() {
                     super.onAllAnimationsDone();
+                    Log.v("GUB", "onAllAnimationsDone");
                     if (finishRunnable != null) {
                         AndroidUtilities.cancelRunOnUIThread(finishRunnable);
                     }
@@ -4193,6 +4200,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                         if (BuildVars.LOGS_ENABLED) {
                             FileLog.d("chatItemAnimator enable notifications");
+                        }
+                        for (int i = 0; i < animatedCells.size(); i++) {
+                            int key = animatedCells.keyAt(i);
+                            AnimatedChatMessageCell cell = animatedCells.get(key);
+                            cell.endAnimation();
                         }
                     });
                 }
@@ -6980,6 +6992,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         });
 
+        animatedMessagesOverlay = new FrameLayout(context);
+        contentView.addView(animatedMessagesOverlay);
         contentView.addView(textSelectionHelper.getOverlayView(context));
         fireworksOverlay = new FireworksOverlay(context);
         contentView.addView(fireworksOverlay, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
@@ -15242,6 +15256,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (obj.type == 10 || obj.type == 11) {
                     updateChat = true;
                 }
+                if (obj.isOut()) {
+                    animateEnterMessage(obj);
+                }
             }
             if (webpagesToReload != null) {
                 getMessagesController().reloadWebPages(dialog_id, webpagesToReload, chatMode == MODE_SCHEDULED);
@@ -19773,7 +19790,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         updateVisibleRows();
     }
 
-    public void onListItemAniamtorTick() {
+    public void onListItemAnimatorTick() {
         invalidateMessagesVisiblePart();
         if (scrimView != null) {
             fragmentView.invalidate();
@@ -21898,6 +21915,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             chatListItemAnimator.onGreetingStickerTransition(holder, greetingsViewContainer);
                         }
                     }
+
+                    AnimatedChatMessageCell animatedCell = animatedCells.get(message.getId());
+                    if (animatedCell != null) {
+                        animatedCell.setRealCell(messageCell);
+                    }
                 } else if (view instanceof ChatActionCell) {
                     ChatActionCell actionCell = (ChatActionCell) view;
                     actionCell.setMessageObject(message);
@@ -23005,5 +23027,58 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, null, Theme.key_voipgroup_overlayAlertMutedByAdmin2));
 
         return themeDescriptions;
+    }
+
+    private void animateEnterMessage(MessageObject message) {
+        if (getParentActivity() == null) {
+            return;
+        }
+
+        for (int i = 0; i < animatedCells.size(); i++) {
+            int key = animatedCells.keyAt(i);
+            AnimatedChatMessageCell cell = animatedCells.get(key);
+            cell.dropAnimationCorrected();
+        }
+
+        AnimatedChatMessageCell cell = new AnimatedChatMessageCell(getParentActivity(), message, new AnimatedChatMessageCell.Delegate() {
+            @Override
+            public void onAnimationStart(AnimatedChatMessageCell cell) {
+                for (int i = 0; i < animatedCells.size(); i++) {
+                    int key = animatedCells.keyAt(i);
+                    AnimatedChatMessageCell cellI = animatedCells.get(key);
+                    if (cellI != cell) {
+                        cellI.correctAnimation();
+                    }
+                }
+            }
+
+            @Override
+            public void onAnimationEnd(AnimatedChatMessageCell cell) {
+                animatedMessagesOverlay.removeView(cell);
+                animatedCells.remove(cell.getMessageObject().getId());
+            }
+
+            @Override
+            public TextSelectionHelper.ChatListTextSelectionHelper getTextSelectionHelper() {
+                return textSelectionHelper;
+            }
+
+            @Override
+            public ChatActivityEnterView getChatActivityEnterView() {
+                return chatActivityEnterView;
+            }
+
+            @Override
+            public FrameLayout getAnimatedMessagesOverlay() {
+                return animatedMessagesOverlay;
+            }
+
+            @Override
+            public RecyclerListView getChatListView() {
+                return chatListView;
+            }
+        });
+        animatedCells.put(message.getId(), cell);
+        animatedMessagesOverlay.addView(cell);
     }
 }

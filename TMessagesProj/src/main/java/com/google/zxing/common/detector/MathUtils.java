@@ -74,24 +74,4 @@ public final class MathUtils {
     }
     return count;
   }
-
-  public static float clip(float a, float min, float max) {
-    if (a < min) {
-      return min;
-    } else if (a > max) {
-      return max;
-    } else {
-      return a;
-    }
-  }
-
-  public static int clip(int a, int min, int max) {
-    if (a < min) {
-      return min;
-    } else if (a > max) {
-      return max;
-    } else {
-      return a;
-    }
-  }
 }

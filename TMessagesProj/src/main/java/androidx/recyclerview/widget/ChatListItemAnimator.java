@@ -49,6 +49,8 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 
     private boolean reversePositions;
 
+    private OnAllAnimationsDoneListener onAllAnimationsDoneListener;
+
     public ChatListItemAnimator(ChatActivity activity, RecyclerListView listView) {
         this.activity = activity;
         this.recyclerListView = listView;
@@ -95,7 +97,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
         ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, 1f);
         valueAnimator.addUpdateListener(animation -> {
             if (activity != null) {
-                activity.onListItemAniamtorTick();
+                activity.onListItemAnimatorTick();
             } else {
                 recyclerListView.invalidate();
             }
@@ -975,6 +977,11 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
         while (!runOnAnimationsEnd.isEmpty()) {
             runOnAnimationsEnd.remove(0).run();
         }
+
+        if (onAllAnimationsDoneListener != null) {
+            onAllAnimationsDoneListener.onAllAnimationsDone();
+        }
+
         cancelAnimators();
     }
 
@@ -1376,12 +1383,12 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 
     @Override
     public long getMoveDuration() {
-        return 220;
+        return 3000; // TODO [CONTEST]
     }
 
     @Override
     public long getChangeDuration() {
-        return 220;
+        return 3000; // TODO [CONTEST]
     }
 
     public void runOnAnimationEnd(Runnable runnable) {
@@ -1458,6 +1465,14 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
         float imageHeight;
         int captionX;
         int captionY;
+    }
+
+    public void setOnAllAnimationsDoneListener(OnAllAnimationsDoneListener listener) {
+        this.onAllAnimationsDoneListener = listener;
+    }
+
+    interface OnAllAnimationsDoneListener {
+        void onAllAnimationsDone();
     }
 }
 

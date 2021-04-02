@@ -308,7 +308,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private MessageObject.GroupedMessagePosition currentPosition;
     private boolean groupPhotoInvisible;
 
-    private int textX;
+    protected int textX;
     private int unmovedTextX;
     private int textY;
     private int totalHeight;
@@ -604,7 +604,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private boolean allowAssistant;
     private Theme.MessageDrawable currentBackgroundDrawable;
     private Theme.MessageDrawable currentBackgroundSelectedDrawable;
-    private int backgroundDrawableLeft;
+    protected int backgroundDrawableLeft;
     private int backgroundDrawableRight;
     private int backgroundDrawableTop;
     private int backgroundDrawableBottom;
@@ -615,7 +615,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int availableTimeWidth;
     private int widthBeforeNewTimeLine;
 
-    private int backgroundWidth = 100;
+    protected int backgroundWidth = 100;
     private boolean hasNewLineForTime;
 
     private int layoutWidth;
@@ -775,6 +775,13 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     };
     private SparseArray<Rect> accessibilityVirtualViewBounds = new SparseArray<>();
     private int currentFocusedVirtualView = -1;
+
+    protected boolean isHiddenBecauseAnimated = false;
+    protected boolean isAnimated = false;
+    protected Paint backgroundPaint = new Paint();
+    protected OnDrawnListener onDrawnListener = null;
+    protected boolean isDrawn = false;
+    protected float textSize = AndroidUtilities.dp(SharedConfig.fontSize);
 
     public ChatMessageCell(Context context) {
         super(context);
@@ -6613,7 +6620,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
-    private int getExtraTextX() {
+    protected int getExtraTextX() {
         if (SharedConfig.bubbleRadius >= 15) {
             return AndroidUtilities.dp(2);
         } else if (SharedConfig.bubbleRadius >= 11) {
@@ -9651,7 +9658,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     @SuppressLint("WrongCall")
     @Override
     protected void onDraw(Canvas canvas) {
-        if (currentMessageObject == null) {
+        if (currentMessageObject == null || isHiddenBecauseAnimated) {
             return;
         }
 
@@ -9663,6 +9670,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             onLayout(false, getLeft(), getTop(), getRight(), getBottom());
         }
 
+        Theme.chat_msgTextPaint.setTextSize(textSize);
         if (currentMessageObject.isOutOwner()) {
             Theme.chat_msgTextPaint.setColor(Theme.getColor(Theme.key_chat_messageTextOut));
             Theme.chat_msgTextPaint.linkColor = Theme.getColor(Theme.key_chat_messageLinkOut);
@@ -9927,7 +9935,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (drawBackground && currentBackgroundDrawable != null && (currentPosition == null || isDrawSelectionBackground() && (currentMessageObject.isMusic() || currentMessageObject.isDocument()))) {
             if (isHighlightedAnimated) {
                 currentBackgroundDrawable.setAlpha((int) (255 * alphaInternal));
-                currentBackgroundDrawable.draw(canvas);
+                currentBackgroundDrawable.draw(canvas, isAnimated ? backgroundPaint : null);
                 float alpha = highlightProgress >= 300 ? 1.0f : highlightProgress / 300.0f;
                 currentSelectedBackgroundAlpha = alpha;
                 if (currentPosition == null) {
@@ -9935,7 +9943,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     currentBackgroundSelectedDrawable.draw(canvas);
                 }
             } else if (selectedBackgroundProgress != 0 && !(currentMessagesGroup != null && currentMessagesGroup.isDocuments)) {
-                currentBackgroundDrawable.draw(canvas);
+                currentBackgroundDrawable.draw(canvas, isAnimated ? backgroundPaint : null);
                 currentSelectedBackgroundAlpha = selectedBackgroundProgress;
                 currentBackgroundSelectedDrawable.setAlpha((int) (selectedBackgroundProgress * alphaInternal * 255));
                 currentBackgroundSelectedDrawable.draw(canvas);
@@ -9957,7 +9965,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 } else {
                     currentSelectedBackgroundAlpha = 0;
                     currentBackgroundDrawable.setAlpha((int) (255 * alphaInternal));
-                    currentBackgroundDrawable.draw(canvas);
+                    currentBackgroundDrawable.draw(canvas, isAnimated ? backgroundPaint : null);
                 }
             }
             if (currentBackgroundShadowDrawable != null && currentPosition == null) {
@@ -10219,6 +10227,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.restoreToCount(restore);
         }
         updateSelectionTextPosition();
+        isDrawn = true;
+        if (onDrawnListener != null) {
+            onDrawnListener.onDrawn();
+        }
     }
 
     public void drawOutboundsContent(Canvas canvas) {
@@ -10335,7 +10347,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             currentBackgroundDrawable.setAlpha((int) (getAlpha() * 255));
             currentBackgroundDrawable.setBounds(left, top, right, bottom);
-            currentBackgroundDrawable.draw(canvas);
+            currentBackgroundDrawable.draw(canvas, isAnimated ? backgroundPaint : null);
             currentBackgroundDrawable.setAlpha(255);
         }
     }
@@ -13866,5 +13878,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 return (drawClock ? 4 : 0) | (drawError ? 8 : 0);
             }
         }
+    }
+
+    protected void setHiddenBecauseAnimated(boolean hidden) {
+        isHiddenBecauseAnimated = hidden;
+        invalidate();
+    }
+
+    interface OnDrawnListener {
+        void onDrawn();
     }
 }

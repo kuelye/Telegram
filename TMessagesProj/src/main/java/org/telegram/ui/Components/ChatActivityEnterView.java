@@ -7923,4 +7923,8 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     public RecordCircle getRecordCicle() {
         return recordCircle;
     }
+
+    public EditTextCaption getMessageEditText() {
+        return messageEditText;
+    }
 }

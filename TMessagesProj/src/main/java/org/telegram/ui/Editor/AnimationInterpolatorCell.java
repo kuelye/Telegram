@@ -14,8 +14,7 @@ import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
-
-import com.google.zxing.common.detector.MathUtils;
+import androidx.core.math.MathUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
@@ -145,7 +144,7 @@ public class AnimationInterpolatorCell extends FrameLayout {
             text = (int) Math.round(cs[i] * 100) + "%";
             textPaint.getTextBounds(text, 0, text.length(), rect);
             Point p = cps[i * 2 + 1];
-            x = MathUtils.clip((int) (p.x - (float) rect.width() / 2), HORIZONTAL_PADDING - TEXT_PADDING, width - HORIZONTAL_PADDING + TEXT_PADDING - rect.width());
+            x = MathUtils.clamp((int) (p.x - (float) rect.width() / 2), HORIZONTAL_PADDING - TEXT_PADDING, width - HORIZONTAL_PADDING + TEXT_PADDING - rect.width());
             y =  p.y + (i == 0 ? CONTROL_POINTER_RADIUS + TEXT_PADDING + rect.height() : - CONTROL_POINTER_RADIUS - TEXT_PADDING);
             textPaint.setColor(0xFF54AAEB);
             canvas.drawText(text, x, y, textPaint);
@@ -179,16 +178,16 @@ public class AnimationInterpolatorCell extends FrameLayout {
             if (dragType != null) {
                 switch (dragType) {
                     case TIME_0:
-                        ts[0] = MathUtils.clip((event.getX() - HORIZONTAL_PADDING) / (getMeasuredWidth() - HORIZONTAL_PADDING * 2), 0, ts[1]);
+                        ts[0] = MathUtils.clamp((event.getX() - HORIZONTAL_PADDING) / (getMeasuredWidth() - HORIZONTAL_PADDING * 2), 0, ts[1]);
                         break;
                     case TIME_1:
-                        ts[1] = MathUtils.clip((event.getX() - HORIZONTAL_PADDING) / (getMeasuredWidth() - HORIZONTAL_PADDING * 2), ts[0], 1);
+                        ts[1] = MathUtils.clamp((event.getX() - HORIZONTAL_PADDING) / (getMeasuredWidth() - HORIZONTAL_PADDING * 2), ts[0], 1);
                         break;
                     case CONTROL_0:
-                        cs[0] = MathUtils.clip((event.getX() - tps[0].x) / (tps[1].x - tps[0].x), 0, 1);
+                        cs[0] = MathUtils.clamp((event.getX() - tps[0].x) / (tps[1].x - tps[0].x), 0, 1);
                         break;
                     case CONTROL_1:
-                        cs[1] = MathUtils.clip((tps[1].x - event.getX()) / (tps[1].x - tps[0].x), 0, 1);
+                        cs[1] = MathUtils.clamp((tps[1].x - event.getX()) / (tps[1].x - tps[0].x), 0, 1);
                         break;
                 }
                 invalidate();
