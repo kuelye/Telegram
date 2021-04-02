@@ -4,15 +4,24 @@ import org.telegram.messenger.R;
 
 public class TextAnimation extends BaseChatAnimation {
 
-    public final static int X_POSITION_INTERPOLATOR_ID = 0;
-    public final static int Y_POSITION_INTERPOLATOR_ID = 1;
-    public final static int BUBBLE_SHAPE_INTERPOLATOR_ID = 2;
-    public final static int TEXT_SCALE_INTERPOLATOR_ID = 3;
-    public final static int COLOR_CHANGE_INTERPOLATOR_ID = 4;
-    public final static int TIME_APPEARS_INTERPOLATOR_ID = 5;
+    public final static int BUBBLE_SHAPE_INTERPOLATOR_ID = 3;
+    public final static int TEXT_SCALE_INTERPOLATOR_ID = 4;
+    public final static int COLOR_CHANGE_INTERPOLATOR_ID = 5;
 
     protected TextAnimation(AnimationType animationType) {
         super(animationType, 6);
+    }
+
+    public Interpolator getBubbleShapeInterpolator() {
+        return getInterpolator(BUBBLE_SHAPE_INTERPOLATOR_ID);
+    }
+
+    public Interpolator getTextScaleInterpolator() {
+        return getInterpolator(TEXT_SCALE_INTERPOLATOR_ID);
+    }
+
+    public Interpolator getColorChangeInterpolator() {
+        return getInterpolator(COLOR_CHANGE_INTERPOLATOR_ID);
     }
 
     @Override

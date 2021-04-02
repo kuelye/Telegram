@@ -15,13 +15,18 @@ import androidx.core.graphics.ColorUtils;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.animation.AnimationController;
 import org.telegram.messenger.animation.AnimationType;
 import org.telegram.messenger.animation.BaseChatAnimation;
+import org.telegram.messenger.animation.Interpolator;
+import org.telegram.messenger.animation.TextAnimation;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.ChatActivityEnterView;
 import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.RecyclerListView;
+import org.w3c.dom.Text;
+
+import static org.telegram.messenger.animation.TextAnimation.X_POSITION_INTERPOLATOR_ID;
+import static org.telegram.messenger.animation.TextAnimation.Y_POSITION_INTERPOLATOR_ID;
 
 public class AnimatedChatMessageCell extends ChatMessageCell {
 
@@ -33,7 +38,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private final static int TEXT_SIZE = 5;
     private final static int TIME_ALPHA = 6;
 
-    private final BaseChatAnimation chatAnimation;
+    private final BaseChatAnimation globalAnimation;
     private final int duration;
     private final Delegate delegate;
 
@@ -56,7 +61,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
     public AnimatedChatMessageCell(Context context, MessageObject obj, BaseChatAnimation animation, int duration, Delegate delegate) {
         super(context);
-        chatAnimation = animation;
+        globalAnimation = animation;
         this.duration = duration;
         this.delegate = delegate;
 
@@ -113,14 +118,14 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     }
 
     public void checkAnimationFinish() {
-        Log.v("GUB", "checkAnimationFinish: isAnimationFinished=" + isAnimationFinished + ", isCorrectionAnimationStarted=" + isCorrectionAnimationStarted + ", isCorrectionAnimationFinished=" + isCorrectionAnimationFinished + ", getEndY()=" + getEndY() + ", getY()=" + getY());
+//        Log.v("GUB", "checkAnimationFinish: isAnimationFinished=" + isAnimationFinished + ", isCorrectionAnimationStarted=" + isCorrectionAnimationStarted + ", isCorrectionAnimationFinished=" + isCorrectionAnimationFinished + ", getEndY()=" + getEndY() + ", getY()=" + getY());
         if (isAnimationFinished && (!isCorrectionAnimationStarted || isCorrectionAnimationFinished) && getEndY() == getY()) {
             endAnimation();
         }
     }
 
     public void endAnimation() {
-        Log.v("GUB", "endAnimation: text=" + getMessageObject().messageText + ", isAnimationDone=" + isAnimationDone);
+//        Log.v("GUB", "endAnimation: text=" + getMessageObject().messageText + ", isAnimationDone=" + isAnimationDone);
         if (isAnimationDone) {
             return;
         }
@@ -142,7 +147,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     }
 
     public BaseChatAnimation getChatAnimation() {
-        return chatAnimation;
+        return globalAnimation;
     }
 
     public int getRemainingDuration() {
@@ -161,12 +166,13 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void startAnimation() {
 //        Log.v("GUB", "startAnimation: text=" + getMessageObject().messageText);
         // x
 
-
         // y
+        Interpolator yInterpolator = globalAnimation.getYInterpolator();
         EditTextCaption editText = delegate.getChatActivityEnterView().getMessageEditText();
         editText.getBaseline();
         int[] editLocation = new int[2];
@@ -179,56 +185,59 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         parameters.put(Y, new Integer[] { startY, getEndY() });
         setY((Integer) parameters.get(Y)[0]);
 
-        // bubble
-//        Log.v("GUB", "realCell.backgroundWidth=" + realCell.backgroundWidth + ", location[0]=" + editLocation[0] + ", ?=" + backgroundDrawableTop + " / " + getBackgroundDrawable().getBounds().top);
-        parameters.put(BUBBLE_BACKGROUND_WIDTH, new Integer[] {
-                realCell.backgroundWidth - editLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(11) + getExtraTextX(),
-                realCell.backgroundWidth
-        });
-
-        // text
-        parameters.put(TEXT_SIZE, new Float[] {
-                editText.getTextSize(),
-                (float) AndroidUtilities.dp(SharedConfig.fontSize)
-        });
-
-        // colors
-        int endBackgroundColor = Theme.getColor(Theme.key_chat_outBubble);
-        int startBackgroundColor = ColorUtils.setAlphaComponent(endBackgroundColor, 0);
-        parameters.put(COLOR_BACKGROUND, new Integer[] { startBackgroundColor, endBackgroundColor });
-        backgroundPaint.setColor(startBackgroundColor);
-
-        // alpha
+        // time
+        Interpolator timeInterpolator = globalAnimation.getTimeAppearsInterpolator();
         parameters.put(TIME_ALPHA, new Float[] { 0f, 1f });
+
+        if (globalAnimation.getAnimationType() == AnimationType.SHORT_TEXT || globalAnimation.getAnimationType() == AnimationType.LONG_TEXT) {
+            // bubble
+            parameters.put(BUBBLE_BACKGROUND_WIDTH, new Integer[] {
+                    realCell.backgroundWidth - editLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(11) + getExtraTextX(),
+                    realCell.backgroundWidth
+            });
+
+            // text
+            parameters.put(TEXT_SIZE, new Float[] {
+                    editText.getTextSize(),
+                    (float) AndroidUtilities.dp(SharedConfig.fontSize)
+            });
+
+            // colors
+            int endBackgroundColor = Theme.getColor(Theme.key_chat_outBubble);
+            int startBackgroundColor = ColorUtils.setAlphaComponent(endBackgroundColor, 0);
+            parameters.put(COLOR_BACKGROUND, new Integer[] { startBackgroundColor, endBackgroundColor });
+            backgroundPaint.setColor(startBackgroundColor);
+        }
 
         // animation
         animator = ValueAnimator.ofFloat(0, 1);
         animator.setDuration(duration);
         animator.addUpdateListener(animation -> {
             float ratio = (float) animation.getAnimatedValue();
+
             // y
             if (!isCorrectionAnimationStarted) {
                 int[] overlayLocation = new int[2];
                 delegate.getAnimatedMessagesOverlay().getLocationOnScreen(overlayLocation);
-                Log.v("GUB", "setY1: y=" + lerpInt(Y, ratio));
-                setY(lerpInt(Y, ratio));
+                setY(lerpInt(Y, yInterpolator.getInterpolation(ratio)));
             }
-
-            // bubble
-            backgroundWidth = (int) lerpInt(BUBBLE_BACKGROUND_WIDTH, ratio);
-
-            // text
-            for (int i = 0; i < currentMessageObject.textLayoutBlocks.size(); ++i) {
-                MessageObject.TextLayoutBlock block = currentMessageObject.textLayoutBlocks.get(i);
-                block.textYOffset = 0;
-            }
-            textSize = lerpFloat(TEXT_SIZE, ratio);
-
-            // color
-            backgroundPaint.setColor(blendColor(COLOR_BACKGROUND, ratio));
 
             // time
-            timeAlphaFactor = lerpFloat(TIME_ALPHA, ratio);
+            timeAlphaFactor = lerpFloat(TIME_ALPHA, timeInterpolator.getInterpolation(ratio));
+
+            if (globalAnimation.getAnimationType() == AnimationType.SHORT_TEXT || globalAnimation.getAnimationType() == AnimationType.LONG_TEXT) {
+                // bubble
+                Interpolator bubbleInterpolator = ((TextAnimation) globalAnimation).getBubbleShapeInterpolator();
+                backgroundWidth = (int) lerpInt(BUBBLE_BACKGROUND_WIDTH, bubbleInterpolator.getInterpolation(ratio));
+
+                // text
+                Interpolator textInterpolator = ((TextAnimation) globalAnimation).getTextScaleInterpolator();
+                textSize = lerpFloat(TEXT_SIZE, textInterpolator.getInterpolation(ratio));
+
+                // color
+                Interpolator colorInterpolator = ((TextAnimation) globalAnimation).getColorChangeInterpolator();
+                backgroundPaint.setColor(blendColor(COLOR_BACKGROUND, colorInterpolator.getInterpolation(ratio)));
+            }
 
             invalidate();
         });
@@ -275,7 +284,6 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         correctionAnimator.setDuration(delegate.getGlobalRemainingDuration());
         correctionAnimator.addUpdateListener(animation -> {
             float ratio = (float) animation.getAnimatedValue();
-            Log.v("GUB", "setY2: y=" + lerpInt(CORRECTED_Y, ratio));
             setY(lerpInt(CORRECTED_Y, ratio));
             invalidate();
         });

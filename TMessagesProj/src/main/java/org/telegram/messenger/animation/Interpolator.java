@@ -4,8 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.messenger.FileLog;
-import org.telegram.messenger.Utilities;
-import org.telegram.tgnet.SerializedData;
+import org.telegram.ui.Components.CubicBezierInterpolator;
 
 public class Interpolator {
 
@@ -16,6 +15,8 @@ public class Interpolator {
 
     private float[] cs = { 1.0f, 1.0f };
     private float[] ts = { 0.0f, 1.0f };
+
+    private CubicBezierInterpolator animationInterpolator;
 
     public int getDuration() {
         return duration;
@@ -36,6 +37,20 @@ public class Interpolator {
     public void setParameters(float[] cs, float ts[]) {
         this.cs = cs;
         this.ts = ts;
+        animationInterpolator = null;
+    }
+
+    public float getInterpolation(float time) {
+        if (animationInterpolator == null) {
+            animationInterpolator = new CubicBezierInterpolator(cs[0], 0, 1 - cs[1], 1);
+        }
+        if (time < ts[0]) {
+            return 0;
+        } else if (time > ts[1]) {
+            return 1;
+        } else {
+            return animationInterpolator.getInterpolation((time - ts[0]) / (ts[1] - ts[0]));
+        }
     }
 
     JSONObject toJson(boolean skipDuration) {

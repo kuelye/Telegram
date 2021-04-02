@@ -1,11 +1,14 @@
 package org.telegram.messenger.animation;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.messenger.FileLog;
 
 public abstract class BaseChatAnimation extends BaseAnimation {
+
+    public final static int X_POSITION_INTERPOLATOR_ID = 0;
+    public final static int Y_POSITION_INTERPOLATOR_ID = 1;
+    public final static int TIME_APPEARS_INTERPOLATOR_ID = 2;
 
     public final static int DEFAULT_DURATION = 500;
 
@@ -21,6 +24,18 @@ public abstract class BaseChatAnimation extends BaseAnimation {
 
     public int getDuration() {
         return duration;
+    }
+
+    public Interpolator getXInterpolator() {
+        return getInterpolator(X_POSITION_INTERPOLATOR_ID);
+    }
+
+    public Interpolator getYInterpolator() {
+        return getInterpolator(Y_POSITION_INTERPOLATOR_ID);
+    }
+
+    public Interpolator getTimeAppearsInterpolator() {
+        return getInterpolator(TIME_APPEARS_INTERPOLATOR_ID);
     }
 
     @Override
