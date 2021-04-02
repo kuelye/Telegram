@@ -4204,11 +4204,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         for (int i = 0; i < animatedCells.size(); i++) {
                             int key = animatedCells.keyAt(i);
                             AnimatedChatMessageCell cell = animatedCells.get(key);
-                            cell.endAnimation();
+                            cell.checkAnimationFinish();
                         }
                     });
                 }
-
 
                 @Override
                 public void endAnimations() {

@@ -24,23 +24,28 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
     private final static int X = 0;
     private final static int Y = 1;
-    private final static int COLOR_BACKGROUND = 2;
-    private final static int BUBBLE_BACKGROUND_WIDTH = 3;
-    private final static int TEXT_SIZE = 4;
+    private final static int CORRECTED_Y = 2;
+    private final static int COLOR_BACKGROUND = 3;
+    private final static int BUBBLE_BACKGROUND_WIDTH = 4;
+    private final static int TEXT_SIZE = 5;
 
     private final Delegate delegate;
 
-    private ValueAnimator animator;
     private ChatMessageCell realCell;
+    private ValueAnimator animator;
+    private ValueAnimator correctionAnimator;
 
     private final int[] startOverlayLocation = new int[2];
     private final int[] chatLocation = new int[2];
 
-    private SparseArray<Object[]> parameters = new SparseArray<>();
+    private final SparseArray<Object[]> parameters = new SparseArray<>();
 
     private boolean isRealCellLayoutDone = false;
     private boolean isAnimationCorrected = true;
     private boolean isAnimationFinished = false;
+    private boolean isCorrectionAnimationFinished = false;
+
+    private float startCorrectionRatio;
 
     public AnimatedChatMessageCell(Context context, MessageObject obj, Delegate delegate) {
         super(context);
@@ -59,14 +64,14 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        checkAnimationStart(false);
+        checkAnimationStart();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         Theme.chat_msgTextPaint.setTextSize(AndroidUtilities.dp(SharedConfig.fontSize));
         super.onDraw(canvas);
-        checkAnimationStart(false);
+        checkAnimationStart();
     }
 
     public void setRealCell(ChatMessageCell cell) {
@@ -79,7 +84,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
                 public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
                     isRealCellLayoutDone = true;
                     realCell.removeOnLayoutChangeListener(this);
-                    checkAnimationStart(false);
+                    checkAnimationStart();
                 }
             });
         }
@@ -89,9 +94,18 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         Log.v("GUB", "correctAnimation: text=" + getMessageObject().messageText + ", isAnimationCorrected=" + isAnimationCorrected);
         if (!isAnimationCorrected) {
             isAnimationCorrected = true;
-            animator.cancel();
-            animator = null;
-            checkAnimationStart(true);
+            if (correctionAnimator != null) {
+                correctionAnimator.cancel();
+                correctionAnimator = null;
+            }
+            startCorrectionAnimation();
+        }
+    }
+
+    public void checkAnimationFinish() {
+        Log.v("GUB", "checkAnimationFinish: isAnimationFinished=" + isAnimationFinished + ", getEndY()=" + getEndY() + ", getY()=" + getY());
+        if (isAnimationFinished && isCorrectionAnimationFinished && getEndY() == getY()) {
+            endAnimation();
         }
     }
 
@@ -101,7 +115,8 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             return;
         }
 
-        animator.cancel();
+        cancelAnimation();
+        cancelCorrectionAnimation();
         AndroidUtilities.runOnUIThread(() -> {
             if (realCell != null) {
                 realCell.setHiddenBecauseAnimated(false);
@@ -115,20 +130,13 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         isAnimationCorrected = false;
     }
 
-    private void checkAnimationStart(boolean fromCurrentY) {
+    private void checkAnimationStart() {
         if (animator == null && isDrawn && isRealCellLayoutDone && realCell != null) {
-            startAnimation(fromCurrentY);
+            startAnimation();
         }
     }
 
-    private void checkAnimationFinish() {
-        Log.v("GUB", "checkAnimationFinish: isAnimationFinished=" + isAnimationFinished + ", getEndY()=" + getEndY() + ", getY()=" + getY());
-        if (isAnimationFinished && getEndY() == getY()) {
-            endAnimation();
-        }
-    }
-
-    private void startAnimation(boolean fromCurrentY) {
+    private void startAnimation() {
         Log.v("GUB", "startAnimation: text=" + getMessageObject().messageText);
         // x
 
@@ -142,7 +150,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         realCell.getLocationOnScreen(realCellLocation);
         delegate.getAnimatedMessagesOverlay().getLocationOnScreen(startOverlayLocation);
         delegate.getChatListView().getLocationOnScreen(chatLocation);
-        int startY = fromCurrentY ? (int) getY() : editLocation[1] + editText.getBaseline() - startOverlayLocation[1] - getBottomBaseline();
+        int startY = editLocation[1] + editText.getBaseline() - startOverlayLocation[1] - getBottomBaseline();
         parameters.put(Y, new Integer[] { startY, getEndY() });
         setY((Integer) parameters.get(Y)[0]);
 
@@ -169,9 +177,11 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         animator.addUpdateListener(animation -> {
             float ratio = (float) animation.getAnimatedValue();
             // y
-            int[] overlayLocation = new int[2];
-            delegate.getAnimatedMessagesOverlay().getLocationOnScreen(overlayLocation);
-            setY(lerpInt(Y, ratio));
+            if (correctionAnimator == null || !correctionAnimator.isRunning()) {
+                int[] overlayLocation = new int[2];
+                delegate.getAnimatedMessagesOverlay().getLocationOnScreen(overlayLocation);
+                setY(lerpInt(Y, ratio));
+            }
 
             // bubble
             backgroundWidth = (int) lerpInt(BUBBLE_BACKGROUND_WIDTH, ratio);
@@ -213,6 +223,55 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             }
         });
         animator.start();
+    }
+
+    private void cancelAnimation() {
+        if (animator != null) {
+            animator.cancel();
+            animator = null;
+        }
+    }
+
+    private void startCorrectionAnimation() {
+        parameters.put(CORRECTED_Y, new Integer[] { (int) getY(), getEndY() });
+
+        correctionAnimator = ValueAnimator.ofFloat(0, 1);
+        correctionAnimator.setDuration(3000);
+        correctionAnimator.addUpdateListener(animation -> {
+            float ratio = (float) animation.getAnimatedValue();
+            setY(lerpInt(CORRECTED_Y, ratio));
+            invalidate();
+        });
+        correctionAnimator.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                isCorrectionAnimationFinished = false;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                isCorrectionAnimationFinished = true;
+                checkAnimationFinish();
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                // stub
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+                // stub
+            }
+        });
+        correctionAnimator.start();
+    }
+
+    private void cancelCorrectionAnimation() {
+        if (correctionAnimator != null) {
+            correctionAnimator.cancel();
+            correctionAnimator = null;
+        }
     }
 
     private float lerpInt(int id, float ratio) {
