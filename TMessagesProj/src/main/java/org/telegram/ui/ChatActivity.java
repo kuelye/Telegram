@@ -15265,7 +15265,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (obj.type == 10 || obj.type == 11) {
                     updateChat = true;
                 }
-                if (obj.isOut()) {
+                if (obj.isOut() && obj.wasJustSent) {
                     animateEnterMessage(obj);
                 }
             }
