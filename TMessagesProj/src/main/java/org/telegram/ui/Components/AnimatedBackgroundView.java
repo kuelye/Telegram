@@ -181,7 +181,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     }
 
     public void animate(Interpolator interpolator) {
-        Log.v("AnimatedBackgroundView", "GUB animate: interpolator=" + interpolator);
+//        Log.v("AnimatedBackgroundView", "GUB animate: interpolator=" + interpolator);
         if (isAnimationRunning() || isSensorAnimationRunning()) return;
         float startState = state;
         animator = ValueAnimator.ofFloat(0.0f, 1f).setDuration(interpolator.getDuration());
@@ -204,7 +204,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     }
 
     public void setSensorAnimationEnabled(boolean enabled) {
-        Log.v("GUB", "setSensorAnimationEnabled: enabled=" + enabled);
+//        Log.v("GUB", "setSensorAnimationEnabled: enabled=" + enabled);
         isSensorAnimationEnabled = enabled;
         if (enabled) {
             registerSensor();

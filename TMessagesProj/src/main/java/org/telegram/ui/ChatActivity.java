@@ -15302,7 +15302,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 if (obj.isOut() && obj.wasJustSent) {
                     AnimationType animationType = null;
-                    Log.v("ChatActivity", "GUB processNewMessages: type=" + obj.type + ", linesCount=" + obj.linesCount);
+//                    Log.v("ChatActivity", "GUB processNewMessages: type=" + obj.type + ", linesCount=" + obj.linesCount);
                     if (obj.type == 0) {
                         if (obj.linesCount > 1) {
                             animationType = LONG_TEXT;
@@ -23105,7 +23105,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         BaseChatAnimation animation = (BaseChatAnimation) AnimationController.getAnimation(animationType);
         int duration = getMoveAnimationDuration(animation.getDuration());
-        Log.v("ChatActivity", "GUB animateEnterMessage: animationType=" + animationType + ", duration=" + duration);
+//        Log.v("ChatActivity", "GUB animateEnterMessage: animationType=" + animationType + ", duration=" + duration);
         AnimatedChatMessageCell cell = new AnimatedChatMessageCell(getParentActivity(), message, animation, duration, new AnimatedChatMessageCell.Delegate() {
             @Override
             public void onAnimationStart(AnimatedChatMessageCell cell) {

@@ -10240,8 +10240,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
 
         // TODO [CONTEST]
-//        Paint textPaint = new Paint();
-//        textPaint.setColor(Color.RED);
+        Paint textPaint = new Paint();
+        textPaint.setColor(Color.RED);
+        canvas.drawLine(0, 1, getWidth(), 1, textPaint);
+        int y = getBottomBaseline();
+        canvas.drawLine(0, y, getWidth(), y, textPaint);
 //        if (getMessageObject() != null) {
 //            for (MessageObject.TextLayoutBlock block : currentMessageObject.textLayoutBlocks) {
 //                for (int i = 0; i < block.textLayout.getLineCount(); ++i) {
@@ -13906,7 +13909,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     protected int getBottomBaseline() {
-        if (currentMessageObject == null || currentMessageObject.textLayoutBlocks.size() == 0) {
+        if (currentMessageObject == null || currentMessageObject.textLayoutBlocks == null || currentMessageObject.textLayoutBlocks.size() == 0) {
             return 0;
         }
         MessageObject.TextLayoutBlock block = currentMessageObject.textLayoutBlocks.get(currentMessageObject.textLayoutBlocks.size() - 1);

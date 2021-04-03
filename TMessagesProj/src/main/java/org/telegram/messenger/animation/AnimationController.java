@@ -92,7 +92,7 @@ public class AnimationController {
     public static void save() {
         JSONObject jsonObject = getInstance().toJson();
         String savedAnimations = jsonObject.toString();
-        Log.v("AnimationController", "GUB save: savedAnimations=" + savedAnimations);
+//        Log.v("AnimationController", "GUB save: savedAnimations=" + savedAnimations);
         MessagesController.getGlobalMainSettings().edit().putString("animations", savedAnimations).apply();
     }
 

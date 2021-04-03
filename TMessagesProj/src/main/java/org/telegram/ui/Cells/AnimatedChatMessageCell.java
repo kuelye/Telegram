@@ -43,8 +43,8 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private ValueAnimator animator;
     private ValueAnimator correctionAnimator;
 
-    private final int[] startOverlayLocation = new int[2];
-    private final int[] chatLocation = new int[2];
+    private int startEnterViewHeight;
+    private int editHeightDelta;
 
     private final SparseArray<Object[]> parameters = new SparseArray<>();
 
@@ -71,6 +71,8 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
                 return delegate.getTextSelectionHelper();
             }
         });
+
+        startEnterViewHeight = delegate.getChatActivityEnterView().getHeight();
     }
 
     @Override
@@ -164,20 +166,23 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
     private void startAnimation() {
         // x
-        EditTextCaption editText = delegate.getChatActivityEnterView().getMessageEditText();
-        int[] editLocation = new int[2];
-        editText.getLocationOnScreen(editLocation);
+        ChatActivityEnterView enterView = delegate.getChatActivityEnterView();
+        EditTextCaption editText = enterView.getMessageEditText();
+        int[] startEditLocation = new int[2];
+        editText.getLocationOnScreen(startEditLocation);
         Interpolator xInterpolator = globalAnimation.getXInterpolator();
-        int startX = editLocation[0] - textX;
-        parameters.put(X, new Integer[] { 0, textX - editLocation[0] });
+        parameters.put(X, new Integer[] { 0, textX - startEditLocation[0] });
 
         // y
         Interpolator yInterpolator = globalAnimation.getYInterpolator();
-        int[] realCellLocation = new int[2];
-        realCell.getLocationOnScreen(realCellLocation);
+        int[] startRealCellLocation = new int[2];
+        realCell.getLocationOnScreen(startRealCellLocation);
+        int[] startChatLocation = new int[2];
+        delegate.getChatListView().getLocationOnScreen(startChatLocation);
+        int[] startOverlayLocation = new int[2];
         delegate.getAnimatedMessagesOverlay().getLocationOnScreen(startOverlayLocation);
-        delegate.getChatListView().getLocationOnScreen(chatLocation);
-        int startY = editLocation[1] + editText.getBaseline() - startOverlayLocation[1] - getBottomBaseline();
+        editHeightDelta = startEnterViewHeight - delegate.getChatActivityEnterView().getMeasuredHeight();
+        int startY = startEditLocation[1] + editText.getBaseline() - startOverlayLocation[1] - getBottomBaseline() - editHeightDelta;
         parameters.put(Y, new Integer[] { startY, getEndY() });
         setY((Integer) parameters.get(Y)[0]);
 
@@ -189,7 +194,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             // bubble
             int backgroundDrawableRightOffset = backgroundWidth - backgroundDrawableRight + AndroidUtilities.dp(8);
             parameters.put(BUBBLE_BACKGROUND_WIDTH, new Integer[] {
-                realCell.backgroundWidth - editLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(11) + getExtraTextX() + backgroundDrawableRightOffset,
+                realCell.backgroundWidth - startEditLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(11) + getExtraTextX() + backgroundDrawableRightOffset,
                 realCell.backgroundWidth
             });
             parameters.put(BUBBLE_BACKGROUND_RIGHT_OFFSET, new Integer[] {
@@ -218,9 +223,17 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
             // y
             if (!isCorrectionAnimationStarted) {
-                int[] overlayLocation = new int[2];
-                delegate.getAnimatedMessagesOverlay().getLocationOnScreen(overlayLocation);
-                setY(lerpInt(Y, yInterpolator.getInterpolation(ratio)));
+                int editCompensation = 0;
+                if (editHeightDelta > 0) {
+                    int[] overlayLocation = new int[2];
+                    delegate.getAnimatedMessagesOverlay().getLocationOnScreen(overlayLocation);
+                    editCompensation = overlayLocation[1] - startOverlayLocation[1];
+                    if (editCompensation == editHeightDelta) {
+                        editHeightDelta = 0;
+                        editCompensation = 0;
+                    }
+                }
+                setY(lerpInt(Y, yInterpolator.getInterpolation(ratio)) + Math.max(0, (editHeightDelta - editCompensation)));
             }
 
             // time
@@ -285,7 +298,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
     private void startCorrectionAnimation() {
         isCorrectionAnimationStarted = true;
-        Log.v("GUB", "startCorrectionAnimation: " + currentMessageObject.messageText + " / " + getY() + " / " + getEndY());
+//        Log.v("GUB", "startCorrectionAnimation: " + currentMessageObject.messageText + " / " + getY() + " / " + getEndY());
         parameters.put(CORRECTED_Y, new Integer[] { (int) getY(), getEndY() });
 
         correctionAnimator = ValueAnimator.ofFloat(0, 1);
