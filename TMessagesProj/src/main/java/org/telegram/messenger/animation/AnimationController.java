@@ -38,6 +38,7 @@ public class AnimationController {
         animations.put(AnimationType.BACKGROUND, new BackgroundAnimation());
         animations.put(AnimationType.SHORT_TEXT, new TextAnimation(AnimationType.SHORT_TEXT));
         animations.put(AnimationType.LONG_TEXT, new TextAnimation(AnimationType.LONG_TEXT));
+        animations.put(AnimationType.EMOJI, new EmojiAnimation());
 
         String savedAnimations = MessagesController.getGlobalMainSettings().getString("animations", null);
         if (savedAnimations == null) {

@@ -4349,4 +4349,5 @@
     <string name="AnimationTextScale">Text scale</string>
     <string name="AnimationColorChange">Color change</string>
     <string name="AnimationTimeAppears">Time appears</string>
+    <string name="AnimationEmojiScale">Emoji scale</string>
 </resources>

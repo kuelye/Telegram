@@ -244,6 +244,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.telegram.messenger.animation.AnimationType.EMOJI;
 import static org.telegram.messenger.animation.AnimationType.LONG_TEXT;
 import static org.telegram.messenger.animation.AnimationType.SHORT_TEXT;
 
@@ -15302,8 +15303,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 if (obj.isOut() && obj.wasJustSent) {
                     AnimationType animationType = null;
-//                    Log.v("ChatActivity", "GUB processNewMessages: type=" + obj.type + ", linesCount=" + obj.linesCount);
-                    if (obj.type == 0) {
+                    Log.v("ChatActivity", "GUB processNewMessages: type=" + obj.type + ", linesCount=" + obj.linesCount);
+                    if (obj.type == 15) {
+                        animationType = EMOJI;
+                    } else if (obj.type == 0) {
                         if (obj.linesCount > 1) {
                             animationType = LONG_TEXT;
                         } else {

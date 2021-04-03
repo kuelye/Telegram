@@ -415,6 +415,10 @@ public class EditTextCaption extends EditTextBoldCursor {
         return caption;
     }
 
+    public StaticLayout getCaptionLayout() {
+        return captionLayout;
+    }
+
     @Override
     public void setHintColor(int value) {
         super.setHintColor(value);

@@ -6934,7 +6934,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
-    private void drawContent(Canvas canvas) {
+    protected void drawContent(Canvas canvas) {
         if (needNewVisiblePart && currentMessageObject.type == 0) {
             getLocalVisibleRect(scrollRect);
             setVisiblePart(scrollRect.top, scrollRect.bottom - scrollRect.top, parentHeight, parentViewTopOffset);
@@ -9664,9 +9664,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return;
         }
 
-        if (isHiddenBecauseAnimated) {
-            return;
-        }
+        setAlpha(isHiddenBecauseAnimated ? 0 : 1);
 
         if (!wasLayout && !animationRunning) {
             forceLayout();
@@ -10240,11 +10238,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
 
         // TODO [CONTEST]
-        Paint textPaint = new Paint();
-        textPaint.setColor(Color.RED);
-        canvas.drawLine(0, 1, getWidth(), 1, textPaint);
-        int y = getBottomBaseline();
-        canvas.drawLine(0, y, getWidth(), y, textPaint);
+//        Paint textPaint = new Paint();
+//        textPaint.setColor(Color.RED);
+//        canvas.drawLine(0, 1, getWidth(), 1, textPaint);
+//        int y = getBottomBaseline();
+//        canvas.drawLine(0, y, getWidth(), y, textPaint);
 //        if (getMessageObject() != null) {
 //            for (MessageObject.TextLayoutBlock block : currentMessageObject.textLayoutBlocks) {
 //                for (int i = 0; i < block.textLayout.getLineCount(); ++i) {
