@@ -31,8 +31,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private final static int CORRECTED_Y = 2;
     private final static int COLOR_BACKGROUND = 3;
     private final static int BUBBLE_BACKGROUND_WIDTH = 4;
-    private final static int TEXT_SIZE = 5;
-    private final static int TIME_ALPHA = 6;
+    private final static int BUBBLE_BACKGROUND_RIGHT_OFFSET = 5;
+    private final static int TEXT_SIZE = 6;
+    private final static int TIME_ALPHA = 7;
 
     private final BaseChatAnimation globalAnimation;
     private final int duration;
@@ -167,7 +168,8 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         int[] editLocation = new int[2];
         editText.getLocationOnScreen(editLocation);
         Interpolator xInterpolator = globalAnimation.getXInterpolator();
-        parameters.put(X, new Integer[] { editLocation[0] - textX, 0 });
+        int startX = editLocation[0] - textX;
+        parameters.put(X, new Integer[] { 0, textX - editLocation[0] });
 
         // y
         Interpolator yInterpolator = globalAnimation.getYInterpolator();
@@ -185,20 +187,25 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
         if (globalAnimation.getAnimationType() == AnimationType.SHORT_TEXT || globalAnimation.getAnimationType() == AnimationType.LONG_TEXT) {
             // bubble
+            int backgroundDrawableRightOffset = backgroundWidth - backgroundDrawableRight + AndroidUtilities.dp(8);
             parameters.put(BUBBLE_BACKGROUND_WIDTH, new Integer[] {
-                    realCell.backgroundWidth - editLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(11) + getExtraTextX(),
-                    realCell.backgroundWidth
+                realCell.backgroundWidth - editLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(11) + getExtraTextX() + backgroundDrawableRightOffset,
+                realCell.backgroundWidth
+            });
+            parameters.put(BUBBLE_BACKGROUND_RIGHT_OFFSET, new Integer[] {
+                backgroundDrawableRightOffset,
+                0
             });
 
             // text
             parameters.put(TEXT_SIZE, new Float[] {
-                    editText.getTextSize(),
-                    (float) AndroidUtilities.dp(SharedConfig.fontSize)
+                editText.getTextSize(),
+                (float) AndroidUtilities.dp(SharedConfig.fontSize)
             });
 
             // colors
             int endBackgroundColor = Theme.getColor(Theme.key_chat_outBubble);
-            int startBackgroundColor = ColorUtils.setAlphaComponent(endBackgroundColor, 0);
+            int startBackgroundColor = Theme.getColor(Theme.key_windowBackgroundWhite);
             parameters.put(COLOR_BACKGROUND, new Integer[] { startBackgroundColor, endBackgroundColor });
             backgroundPaint.setColor(startBackgroundColor);
         }
@@ -208,9 +215,6 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         animator.setDuration(duration);
         animator.addUpdateListener(animation -> {
             float ratio = (float) animation.getAnimatedValue();
-
-            // x
-            setAnimationOffsetX(lerpInt(X, xInterpolator.getInterpolation(ratio)));
 
             // y
             if (!isCorrectionAnimationStarted) {
@@ -222,10 +226,14 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             // time
             timeAlphaFactor = lerpFloat(TIME_ALPHA, timeInterpolator.getInterpolation(ratio));
 
+            int dBackgroundWidth = 0;
             if (globalAnimation.getAnimationType() == AnimationType.SHORT_TEXT || globalAnimation.getAnimationType() == AnimationType.LONG_TEXT) {
                 // bubble
                 Interpolator bubbleInterpolator = ((TextAnimation) globalAnimation).getBubbleShapeInterpolator();
-                backgroundWidth = (int) lerpInt(BUBBLE_BACKGROUND_WIDTH, bubbleInterpolator.getInterpolation(ratio));
+                float bubbleInterpolation = bubbleInterpolator.getInterpolation(ratio);
+                backgroundWidth = (int) lerpInt(BUBBLE_BACKGROUND_WIDTH, bubbleInterpolation);
+                backgroundDrawableRightOffset = (int) lerpInt(BUBBLE_BACKGROUND_RIGHT_OFFSET, bubbleInterpolation);
+                 dBackgroundWidth = backgroundWidth - (int) parameters.get(BUBBLE_BACKGROUND_WIDTH)[0] + (int) parameters.get(BUBBLE_BACKGROUND_RIGHT_OFFSET)[0];
 
                 // text
                 Interpolator textInterpolator = ((TextAnimation) globalAnimation).getTextScaleInterpolator();
@@ -235,6 +243,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
                 Interpolator colorInterpolator = ((TextAnimation) globalAnimation).getColorChangeInterpolator();
                 backgroundPaint.setColor(blendColor(COLOR_BACKGROUND, colorInterpolator.getInterpolation(ratio)));
             }
+
+            // x
+            setAnimationOffsetX(dBackgroundWidth + lerpInt(X, xInterpolator.getInterpolation(ratio)));
 
             invalidate();
         });
