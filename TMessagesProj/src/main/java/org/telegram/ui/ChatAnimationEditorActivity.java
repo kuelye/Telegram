@@ -41,6 +41,9 @@ public class ChatAnimationEditorActivity extends BaseChatAnimationActivity {
                     case -1:
                         finishFragment();
                         break;
+                    case RESTORE_TO_DEFAULT_MENU_ITEM_ID:
+                        AnimationController.restoreToDefault();
+                        break;
                 }
             }
         });

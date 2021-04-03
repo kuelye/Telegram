@@ -18,26 +18,6 @@ public abstract class BaseChatAnimation extends BaseAnimation {
         super(animationType, interpolatorsCount);
     }
 
-    public void setDuration(int duration) {
-        this.duration = duration;
-    }
-
-    public int getDuration() {
-        return duration;
-    }
-
-    public Interpolator getXInterpolator() {
-        return getInterpolator(X_POSITION_INTERPOLATOR_ID);
-    }
-
-    public Interpolator getYInterpolator() {
-        return getInterpolator(Y_POSITION_INTERPOLATOR_ID);
-    }
-
-    public Interpolator getTimeAppearsInterpolator() {
-        return getInterpolator(TIME_APPEARS_INTERPOLATOR_ID);
-    }
-
     @Override
     JSONObject toJson() {
         try {
@@ -58,5 +38,30 @@ public abstract class BaseChatAnimation extends BaseAnimation {
         } catch (JSONException e) {
             FileLog.e(e);
         }
+    }
+
+    @Override
+    void restoreToDefault() {
+        // TODO [CONTEST]
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+
+    public Interpolator getXInterpolator() {
+        return getInterpolator(X_POSITION_INTERPOLATOR_ID);
+    }
+
+    public Interpolator getYInterpolator() {
+        return getInterpolator(Y_POSITION_INTERPOLATOR_ID);
+    }
+
+    public Interpolator getTimeAppearsInterpolator() {
+        return getInterpolator(TIME_APPEARS_INTERPOLATOR_ID);
     }
 }

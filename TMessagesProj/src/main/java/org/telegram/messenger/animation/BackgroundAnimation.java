@@ -1,5 +1,7 @@
 package org.telegram.messenger.animation;
 
+import android.util.Log;
+
 import androidx.annotation.ColorInt;
 
 import org.json.JSONArray;
@@ -8,16 +10,18 @@ import org.json.JSONObject;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.R;
 
+import java.util.Arrays;
+
 public class BackgroundAnimation extends BaseAnimation {
 
     public final static int POINTS_COUNT = 4;
-    private final static int[] DEFAULT_COLORS = { 0xFFFFF3BD, 0xFF739975, 0xFFFADF71, 0xFF2C624B };
+    private final static int[] DEFAULT_COLORS = { 0xFF2C624B, 0xFFFFF3BD, 0xFF739975, 0xFFFADF71 }; // TODO [CONTEST] { 0xFFFFF3BD, 0xFF739975, 0xFFFADF71, 0xFF2C624B };
 
     public final static int SEND_MESSAGE_INTERPOLATOR_ID = 0;
     public final static int OPEN_CHAT_INTERPOLATOR_ID = 1;
     public final static int JUMP_TO_MESSAGE_INTERPOLATOR_ID = 2;
 
-    private final int[] colors = DEFAULT_COLORS;
+    private final int[] colors = DEFAULT_COLORS.clone();
 
     BackgroundAnimation() {
         super(AnimationType.BACKGROUND, 3);
@@ -32,19 +36,6 @@ public class BackgroundAnimation extends BaseAnimation {
             new InterpolatorAnimationSetting("AnimationOpenChat", R.string.AnimationOpenChat, OPEN_CHAT_INTERPOLATOR_ID),
             new InterpolatorAnimationSetting("AnimationJumpToMessage", R.string.AnimationJumpToMessage, JUMP_TO_MESSAGE_INTERPOLATOR_ID)
         };
-    }
-
-    public int[] getColors() {
-        return colors;
-    }
-
-    @ColorInt
-    public int getColor(int id) {
-        return colors[id];
-    }
-
-    public void setColor(int id, @ColorInt int color) {
-        colors[id] = color;
     }
 
     @Override
@@ -70,6 +61,27 @@ public class BackgroundAnimation extends BaseAnimation {
         } catch (JSONException e) {
             FileLog.e(e);
         }
+    }
+
+    @Override
+    void restoreToDefault() {
+        System.arraycopy(DEFAULT_COLORS, 0, colors, 0, colors.length);
+        getInterpolator(SEND_MESSAGE_INTERPOLATOR_ID).setDuration(1000).setParameters(0.33f, 1, 0, 1);
+        getInterpolator(OPEN_CHAT_INTERPOLATOR_ID).setDuration(2000).setParameters(0.16f, 1, 0, 1);
+        getInterpolator(JUMP_TO_MESSAGE_INTERPOLATOR_ID).setDuration(1000).setParameters(0.33f, 1, 0, 1);
+    }
+
+    public int[] getColors() {
+        return colors;
+    }
+
+    @ColorInt
+    public int getColor(int id) {
+        return colors[id];
+    }
+
+    public void setColor(int id, @ColorInt int color) {
+        colors[id] = color;
     }
 
     public static class BackgroundColorsAnimationSetting extends BaseAnimationSetting {

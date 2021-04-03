@@ -24,8 +24,9 @@ public class Interpolator {
         return duration;
     }
 
-    public void setDuration(int duration) {
+    public Interpolator setDuration(int duration) {
         this.duration = duration;
+        return this;
     }
 
     public float[] getCs() {
@@ -36,10 +37,15 @@ public class Interpolator {
         return ts;
     }
 
-    public void setParameters(float[] cs, float ts[]) {
+    public Interpolator setParameters(float cs0, float cs1, float ts0, float ts1) {
+        return setParameters(new float[] { cs0, cs1 }, new float[] { ts0, ts1 });
+    }
+
+    public Interpolator setParameters(float[] cs, float[] ts) {
         this.cs = cs;
         this.ts = ts;
         animationInterpolator = null;
+        return this;
     }
 
     public float getInterpolation(float time) {

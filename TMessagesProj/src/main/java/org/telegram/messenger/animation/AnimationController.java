@@ -40,7 +40,9 @@ public class AnimationController {
         animations.put(AnimationType.LONG_TEXT, new TextAnimation(AnimationType.LONG_TEXT));
 
         String savedAnimations = MessagesController.getGlobalMainSettings().getString("animations", null);
-        if (savedAnimations != null) {
+        if (savedAnimations == null) {
+            restoreToDefault();
+        } else {
             try {
                 JSONObject jsonObject = new JSONObject(savedAnimations);
                 for (BaseAnimation animation : animations.values()) {
@@ -92,6 +94,12 @@ public class AnimationController {
         String savedAnimations = jsonObject.toString();
         Log.v("AnimationController", "GUB save: savedAnimations=" + savedAnimations);
         MessagesController.getGlobalMainSettings().edit().putString("animations", savedAnimations).apply();
+    }
+
+    public static void restoreToDefault() {
+        for (BaseAnimation animation : getInstance().animations.values()) {
+            animation.restoreToDefault();
+        }
     }
 
     private JSONObject toJson() {

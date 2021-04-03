@@ -38,6 +38,8 @@ import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.hardware.SensorEvent;
+import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -3681,5 +3683,57 @@ public class AndroidUtilities {
             }
             view.setTag(null);
         }
+    }
+
+    public static int calculatePitchAndRoll(SensorEvent event, float[] result, WindowManager wm, float[] rollBuffer, float[] pitchBuffer, int bufferOffset) {
+        int rotation = wm.getDefaultDisplay().getRotation();
+
+        float x = event.values[0] / SensorManager.GRAVITY_EARTH;
+        float y = event.values[1] / SensorManager.GRAVITY_EARTH;
+        float z = event.values[2] / SensorManager.GRAVITY_EARTH;
+
+        float pitch = (float) (Math.atan2(x, Math.sqrt(y * y + z * z)) / Math.PI * 2.0);
+        float roll = (float) (Math.atan2(y, Math.sqrt(x * x + z * z)) / Math.PI * 2.0);
+
+        switch (rotation) {
+            case Surface.ROTATION_0:
+                break;
+            case Surface.ROTATION_90: {
+                float tmp = pitch;
+                pitch = roll;
+                roll = tmp;
+                break;
+            }
+            case Surface.ROTATION_180:
+                roll = -roll;
+                pitch = -pitch;
+                break;
+            case Surface.ROTATION_270: {
+                float tmp = -pitch;
+                pitch = roll;
+                roll = tmp;
+                break;
+            }
+        }
+        rollBuffer[bufferOffset] = roll;
+        pitchBuffer[bufferOffset] = pitch;
+        bufferOffset = (bufferOffset + 1) % rollBuffer.length;
+        roll = pitch = 0;
+        for (int i = 0; i < rollBuffer.length; i++) {
+            roll += rollBuffer[i];
+            pitch += pitchBuffer[i];
+        }
+        roll /= rollBuffer.length;
+        pitch /= rollBuffer.length;
+        if (roll > 1f) {
+            roll = 2f - roll;
+        } else if (roll < -1f) {
+            roll = -2f - roll;
+        }
+
+        result[0] = pitch;
+        result[1] = roll;
+
+        return bufferOffset;
     }
 }

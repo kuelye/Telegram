@@ -28,6 +28,7 @@ public abstract class BaseAnimation {
     }
 
     abstract JSONObject toJson();
+    abstract void restoreToDefault();
 
     protected JSONObject toJson(boolean skipInterpolatorsDuration) {
         try {

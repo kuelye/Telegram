@@ -39,6 +39,10 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -2769,6 +2773,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         int h = heightSize - listViewTopHeight - (inPreviewMode && Build.VERSION.SDK_INT >= 21 ? AndroidUtilities.statusBarHeight : 0);
                         if (keyboardSize > AndroidUtilities.dp(20) && getLayoutParams().height < 0) {
                             h += keyboardSize;
+                            animatedBackgroundView.setSensorAnimationEnabled(false);
+                        } else {
+                            animatedBackgroundView.setSensorAnimationEnabled(true);
                         }
                         child.measure(contentWidthSpec, LayoutHelper.measureExactly(Math.max(AndroidUtilities.dp(10), h)));
                     } else if (child == chatListView || child == animatedMessagesOverlay) {
@@ -17742,6 +17749,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (AvatarPreviewer.hasVisibleInstance()) {
             AvatarPreviewer.getInstance().close();
         }
+        animatedBackgroundView.unregisterSensor();
     }
 
     private void applyDraftMaybe(boolean canClear) {

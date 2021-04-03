@@ -9,8 +9,13 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.AnticipateInterpolator;
 import android.view.animation.OvershootInterpolator;
 
@@ -23,9 +28,11 @@ import org.telegram.messenger.animation.AnimationType;
 import org.telegram.messenger.animation.BackgroundAnimation;
 import org.telegram.messenger.animation.Interpolator;
 
+import java.util.Arrays;
+
 import static java.lang.Math.max;
 
-public class AnimatedBackgroundView extends View implements AnimationController.OnAnimationChangedListener {
+public class AnimatedBackgroundView extends View implements AnimationController.OnAnimationChangedListener, SensorEventListener {
 
     private final static PointF[] DEFAULT_POINTS = { new PointF(0.35f, 0.25f), new PointF(0.82f, 0.08f), new PointF(0.65f, 0.75f), new PointF(0.18f, 0.92f)};
 
@@ -34,31 +41,47 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     private final static int DEV_POINTS_STROKE_COLOR = Color.WHITE;
     private final static float DEV_POINTS_START_SCALE = 2f;
 
+    private final static float SENSOR_START_DISTANCE_SQUARE = 0.01f;
+    private final static float SENSOR_STATE_SLOP = 0.02f;
+    private final static float SENSOR_STATE_ANIMATE_SLOP = 0.1f;
+    private final static float SENSOR_ANIMATION_DURATION = 300;
+
     private final Paint fillPaint;
     private final Paint strokePaint;
     private final Paint framePaint;
 
     private BackgroundAnimation animation;
 
-    private ValueAnimator valueAnimator;
+    private boolean isSensorAnimationEnabled = false;
+    private ValueAnimator animator;
+    private ValueAnimator sensorAnimator;
     private float state = 0f;
+    private float sensorState = 0f;
+    private float previousSensorState = 0f;
+    private float targetSensorState = 0f;
     private final Point[] points = new Point[4];
     private final Matrix frameMatrix = new Matrix();
     private Bitmap frame = null;
-
-    private final float[] ds = new float[4];
-    private final int[] rs = new int[4];
-    private final int[] gs = new int[4];
-    private final int[] bs = new int[4];
-    private float[] rxs = null;
 
     private boolean isDevPointsVisible;
     private float devPointsAlpha;
     private float devPointsScale = DEV_POINTS_START_SCALE;
     private AnimatorSet devPointsVisibleAnimatorSet = null;
 
+    private final SensorManager sensorManager;
+    private final WindowManager wm;
+    private final Sensor sensor;
+    private final float[] rollBuffer = new float[3];
+    private final float[] pitchBuffer = new float[3];
+    private int bufferOffset;
+    private final float[] pitchAndRoll = new float[2];
+
     public AnimatedBackgroundView(Context context) {
         super(context);
+
+        wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        sensorManager = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
         fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         fillPaint.setStyle(Paint.Style.FILL);
@@ -119,25 +142,115 @@ public class AnimatedBackgroundView extends View implements AnimationController.
         updateAnimation();
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (!isSensorAnimationEnabled) {
+            return;
+        }
+
+        bufferOffset = AndroidUtilities.calculatePitchAndRoll(event, pitchAndRoll, wm, rollBuffer, pitchBuffer, bufferOffset);
+        float dist2 = (float) (Math.pow(pitchAndRoll[0], 2) + Math.pow(pitchAndRoll[1], 2));
+        if (dist2 < SENSOR_START_DISTANCE_SQUARE) {
+//            animateSensor(0, true);
+            return;
+        }
+
+        float angle = - (float) (Math.atan2(pitchAndRoll[0], pitchAndRoll[1]) - Math.PI / 2);
+        if (angle < 0) angle += 2 * Math.PI;
+        float targetSensorState = (float) (2 * angle / Math.PI);
+        float d = clampDistance(Math.abs(sensorState - targetSensorState));
+        if (d < SENSOR_STATE_SLOP) {
+            return;
+        }
+
+//        d = clampDistance(Math.abs(sensorState - targetSensorState));
+//        Log.v("GUB", "onSensorChanged: pitchAndRoll=" + Arrays.toString(pitchAndRoll) + ", dist2=" + dist2 + ", stateOffset=" + sensorState + ", d=" + d);
+//        if (d < SENSOR_STATE_ANIMATE_SLOP && !isSensorAnimationRunning()) {
+//            cancelSensorAnimation();
+            sensorState = targetSensorState;
+            updateByState();
+//        } else {
+//            animateSensor(targetSensorState, false);
+//        }
+        previousSensorState = sensorState;
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // ignore
+    }
+
     public void animate(Interpolator interpolator) {
         Log.v("AnimatedBackgroundView", "GUB animate: interpolator=" + interpolator);
-        if (valueAnimator != null && valueAnimator.isRunning()) return;
+        if (isAnimationRunning() || isSensorAnimationRunning()) return;
         float startState = state;
-        valueAnimator = ValueAnimator.ofFloat(0.0f, 1f).setDuration(interpolator.getDuration());
-        valueAnimator.addUpdateListener(animation -> {
+        animator = ValueAnimator.ofFloat(0.0f, 1f).setDuration(interpolator.getDuration());
+        animator.addUpdateListener(animation -> {
             state = startState + 0.5f * interpolator.getInterpolation((float) animation.getAnimatedValue());
-            recalculatePoints();
-            recalculateBitmap();
-            invalidate();
+            updateByState();
         });
-        valueAnimator.start();
+        animator.start();
     }
 
     public void cancelAnimation() {
-        if (valueAnimator != null) {
-            valueAnimator.cancel();
-            valueAnimator = null;
+        if (animator != null) {
+            animator.cancel();
+            animator = null;
         }
+    }
+
+    public boolean isAnimationRunning() {
+        return animator != null && animator.isRunning();
+    }
+
+    public void setSensorAnimationEnabled(boolean enabled) {
+        Log.v("GUB", "setSensorAnimationEnabled: enabled=" + enabled);
+        isSensorAnimationEnabled = enabled;
+        if (enabled) {
+            registerSensor();
+        } else {
+            unregisterSensor();
+            animateSensor(0, true);
+        }
+    }
+
+    private void animateSensor(float targetSensorState, boolean forced) {
+        Log.v("GUB", "animateSensor: targetSensorState=" + targetSensorState + ", forced=" + forced + ", this.targetSensorState=" + this.targetSensorState + ", ?=" + clampDistance(this.targetSensorState - targetSensorState));
+        if (sensorAnimator != null && sensorAnimator.isRunning()) {
+            if (forced && clampDistance(this.targetSensorState - targetSensorState) != 0) {
+                cancelSensorAnimation();
+            } else {
+                return;
+            }
+        }
+
+        float startSensorState = sensorState;
+        if (startSensorState > targetSensorState && startSensorState - targetSensorState > 2) {
+            targetSensorState += 4;
+        } else if (startSensorState < targetSensorState && targetSensorState - startSensorState > 2) {
+            targetSensorState -= 4;
+        }
+        this.targetSensorState = targetSensorState;
+        long duration = (long) (SENSOR_ANIMATION_DURATION * Math.min(2, Math.abs(targetSensorState - startSensorState)) / 2);
+//        Log.v("GUB", "animateSensor: startSensorState=" + startSensorState + ", targetSensorState=" + targetSensorState + ", duration=" + duration);
+
+        sensorAnimator = ValueAnimator.ofFloat(startSensorState, targetSensorState).setDuration(duration);
+        sensorAnimator.addUpdateListener(animation -> {
+            sensorState = (float) animation.getAnimatedValue();
+            updateByState();
+        });
+        sensorAnimator.start();
+    }
+
+    private void cancelSensorAnimation() {
+        if (sensorAnimator != null) {
+            sensorAnimator.cancel();
+            sensorAnimator = null;
+        }
+    }
+
+    private boolean isSensorAnimationRunning() {
+        return sensorAnimator != null && sensorAnimator.isRunning();
     }
 
     public boolean isDevPointsVisible() {
@@ -166,8 +279,22 @@ public class AnimatedBackgroundView extends View implements AnimationController.
         devPointsVisibleAnimatorSet.start();
     }
 
+    public void registerSensor() {
+        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI); // TODO [CONTEST] GAME
+    }
+
+    public void unregisterSensor() {
+        sensorManager.unregisterListener(this);
+    }
+
     private void updateAnimation() {
         animation = AnimationController.getBackgroundAnimation();
+        invalidate();
+    }
+
+    private void updateByState() {
+        recalculatePoints();
+        recalculateBitmap();
         invalidate();
     }
 
@@ -185,20 +312,28 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     }
 
     private Point getPoint(int i) {
-        int s = (int) Math.floor(state * 2) / 2;
-        float f = Math.abs(state - s);
-        int fromI = clip(i - s);
-        int toI = clip(fromI - 1);
+        int s = (int) Math.floor((state + sensorState) * 2) / 2;
+        float f = Math.abs((state + sensorState) - s);
+        int fromI = clamp(i - s);
+        int toI = clamp(fromI - 1);
         return new Point(
             AndroidUtilities.lerp(DEFAULT_POINTS[fromI].x, DEFAULT_POINTS[toI].x, f),
             AndroidUtilities.lerp(DEFAULT_POINTS[fromI].y, DEFAULT_POINTS[toI].y, f)
         );
     }
 
-    private int clip(int i) {
-        i = i % 4;
-        if (i < 0) i += 4;
-        return i;
+    private int clamp(int state) {
+        state = state % 4;
+        if (state < 0) state += 4;
+        return state;
+    }
+
+    private float clampDistance(float distance) {
+        if (distance > 0) {
+            return distance - (int) Math.floor(distance / 4) * 4;
+        } else {
+            return distance + (int) Math.ceil(distance / 4) * 4;
+        }
     }
 
     @ColorInt
@@ -230,40 +365,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
         }
         Utilities.generateBackgroundBitmap(bitmap, points, colors);
 
-//        rxs = new float[s];
-//        for (int x = 0; x < s; ++x) {
-//            rxs[x] = (float) x / s;
-//        }
-//        for (int x = 0; x < s; ++x) {
-//            for (int y = 0; y < s; ++y) {
-//                bitmap.setPixel(x, y, getGradientColor(rxs[x], rxs[y]));
-//            }
-//        }
         Log.v("GUB", "generateBitmap: elapsed=" + (System.currentTimeMillis() - now) + "ms");
         return bitmap;
     }
-
-//    private int getGradientColor(float x, float y) {
-//        for (int i = 0; i < 4; ++i) {
-//            ds[i] = MathUtils.distance(x, y, points[i].x, points[i].y);
-//            rs[i] = Color.red(animation.getColor(i));
-//            gs[i] = Color.green(animation.getColor(i));
-//            bs[i] = Color.blue(animation.getColor(i));
-//        }
-//        if (x == 0 && y == 0) {
-//            Log.v("GUB", "(0, 0): " + ds[0] + ", " + ds[1] + ", " + ds[2] + ", " + ds[3]);
-//        }
-//        float d = min(ds[0], min(ds[1], min(ds[2], ds[3])));
-//        for (int i = 0; i < 4; ++i) {
-//            ds[i] = (float) Math.pow(1 - (ds[i] - d), 5);
-//        }
-//        d = ds[0] + ds[1] + ds[2] + ds[3];
-//        for (int i = 0; i < 4; ++i) {
-//            ds[i] = ds[i] / d;
-//        }
-//        int r = (int) (rs[0] * ds[0] + rs[1] * ds[1] + rs[2] * ds[2] + rs[3] * ds[3]);
-//        int g = (int) (gs[0] * ds[0] + gs[1] * ds[1] + gs[2] * ds[2] + gs[3] * ds[3]);
-//        int b = (int) (bs[0] * ds[0] + bs[1] * ds[1] + bs[2] * ds[2] + bs[3] * ds[3]);
-//        return Color.rgb(r, g, b);
-//    }
 }
