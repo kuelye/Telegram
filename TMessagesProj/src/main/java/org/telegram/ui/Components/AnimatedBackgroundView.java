@@ -203,7 +203,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     }
 
     public void setSensorAnimationEnabled(boolean enabled) {
-//        Log.v("GUB", "setSensorAnimationEnabled: enabled=" + enabled);
+        Log.v("GUB", "setSensorAnimationEnabled: enabled=" + enabled);
         isSensorAnimationEnabled = enabled;
         if (enabled) {
             registerSensor();

@@ -2768,9 +2768,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         int h = heightSize - listViewTopHeight - (inPreviewMode && Build.VERSION.SDK_INT >= 21 ? AndroidUtilities.statusBarHeight : 0);
                         if (keyboardSize > AndroidUtilities.dp(20) && getLayoutParams().height < 0) {
                             h += keyboardSize;
-                            animatedBackgroundView.setSensorAnimationEnabled(false);
-                        } else {
-                            animatedBackgroundView.setSensorAnimationEnabled(true);
                         }
                         child.measure(contentWidthSpec, LayoutHelper.measureExactly(Math.max(AndroidUtilities.dp(10), h)));
                     } else if (child == chatListView || child == animatedMessagesOverlay) {
@@ -2893,6 +2890,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
 
                 updateBulletinLayout();
+                animatedBackgroundView.setSensorAnimationEnabled(!isKeyboardVisible() && keyboardHeight < AndroidUtilities.dp(20));
             }
 
             @Override
