@@ -788,6 +788,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     protected float replyAnimationOffsetY;
     protected int replyNameColor = -1;
     protected int replyTextColor = -1;
+    protected float replySystemAlphaFactor = 1;
     protected int backgroundDrawableRightOffset;
     protected int additionalOffsetBottom;
     protected int audioDotX;
@@ -10664,10 +10665,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             if (currentMessageObject.shouldDrawWithoutBackground()) {
                 Theme.chat_replyLinePaint.setColor(Theme.getColor(Theme.key_chat_stickerReplyLine));
-                Theme.chat_replyNamePaint.setColor(Theme.getColor(Theme.key_chat_stickerReplyNameText));
-                Theme.chat_replyTextPaint.setColor(Theme.getColor(Theme.key_chat_stickerReplyMessageText));
+                Theme.chat_replyNamePaint.setColor(replyNameColor == -1 ? Theme.getColor(Theme.key_chat_stickerReplyNameText) : replyNameColor);
+                Theme.chat_replyTextPaint.setColor(replyTextColor == -1 ? Theme.getColor(Theme.key_chat_stickerReplyMessageText) : replyTextColor);
                 int backWidth = Math.max(replyNameWidth, replyTextWidth) + AndroidUtilities.dp(14);
                 Theme.chat_systemDrawable.setColorFilter(Theme.colorFilter);
+                Theme.chat_systemDrawable.setAlpha((int) (255 * replySystemAlphaFactor));
                 Theme.chat_systemDrawable.setBounds((int) replyStartX - AndroidUtilities.dp(7), replyStartY - AndroidUtilities.dp(6), (int) replyStartX - AndroidUtilities.dp(7) + backWidth, replyStartY + AndroidUtilities.dp(41));
                 Theme.chat_systemDrawable.draw(canvas);
             } else {

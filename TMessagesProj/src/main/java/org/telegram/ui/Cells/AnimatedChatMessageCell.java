@@ -54,6 +54,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private final static int REPLY_OFFSET_Y = COUNTER++;
     private final static int REPLY_NAME_COLOR = COUNTER++;
     private final static int REPLY_TEXT_COLOR = COUNTER++;
+    private final static int REPLY_SYSTEM_ALPHA = COUNTER++;
 
     private final BaseChatAnimation globalAnimation;
     private final int duration;
@@ -228,10 +229,12 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
         // reply
         int startReplyX = 0;
-
+        int startReplyY = 0;
+        Log.v("GUB", "should=" + currentMessageObject.shouldDrawWithoutBackground());
         if (globalAnimation.isDefault()) {
             // x
             if (globalAnimation.isText()) {
+                startReplyY = -AndroidUtilities.dp(6);
                 endX = textX - startEditLocation[0];
             }
 
@@ -275,8 +278,6 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             int startBackgroundColor = Theme.getColor(Theme.key_windowBackgroundWhite);
             parameters.put(COLOR_BACKGROUND, new Integer[] { startBackgroundColor, Theme.getColor(Theme.key_chat_outBubble) });
             backgroundPaint.setColor(startBackgroundColor);
-            parameters.put(REPLY_NAME_COLOR, new Integer[] { Theme.getColor(Theme.key_chat_replyPanelName), currentMessageObject.shouldDrawWithoutBackground() ? Theme.getColor(Theme.key_chat_stickerReplyNameText) : Theme.getColor(Theme.key_chat_outReplyNameText) });
-            parameters.put(REPLY_TEXT_COLOR, new Integer[] { Theme.getColor(Theme.key_chat_replyPanelMessage), currentMessageObject.shouldDrawWithoutBackground() ? Theme.getColor(Theme.key_chat_stickerReplyMessageText) : Theme.getColor(Theme.key_chat_outReplyMessageText) });
             if (globalAnimation.isVoice()) {
                 parameters.put(COLOR_VOICE_DOT, new Integer[] { Theme.getColor(Theme.key_chat_recordedVoiceDot), Theme.getColor(Theme.key_chat_outVoiceSeekbarFill) });
                 parameters.put(COLOR_DURATION, new Integer[] { Theme.getColor(Theme.key_chat_recordTime), Theme.getColor(Theme.key_chat_outTimeText) });
@@ -292,8 +293,14 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             Integer[] startCoords;
             if (startStickerRect == null) {
                 startCoords = new Integer[] { startEditLocation[0], (int) (editText.getBaseline() - size + fontMetrics.descent + AndroidUtilities.dp(1)), size, size };
+                if (currentMessageObject.isReply()) {
+                    startCoords[1] += AndroidUtilities.dp(50);
+                }
             } else {
                 startCoords = new Integer[] { startStickerRect.left, startStickerRect.top - startY - startOverlayLocation[1] - enterHeightDelta, startStickerRect.width(), startStickerRect.height() };
+                if (currentMessageObject.isReply()) {
+                    startCoords[1] += AndroidUtilities.dp(50);
+                }
             }
             Integer[] endCoords = new Integer[] { (int) getPhotoImage().getImageX(), (int) getPhotoImage().getImageY(), (int) getPhotoImage().getImageWidth(), (int) getPhotoImage().getImageHeight() };
             parameters.put(EMOJI_PHOTO_COORDS, new Integer[][] { startCoords, endCoords });
@@ -310,10 +317,17 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             if (startStickerRect == null) {
                 endY += endCoords[3] - startCoords[3];
             }
+            if (currentMessageObject.isReply()) {
+                startY -= AndroidUtilities.dp(50);
+            }
 
             // reply
-            startReplyX = (int) (startCoords[0] - forwardNameX); // startCords used instead of textX cause we have no text for emoji message
+            startReplyX = (int) (startEditLocation[0] - forwardNameX);
+            parameters.put(REPLY_SYSTEM_ALPHA, new Integer[] { 0, 1 } );
         }
+
+        parameters.put(REPLY_NAME_COLOR, new Integer[] { Theme.getColor(Theme.key_chat_replyPanelName), currentMessageObject.shouldDrawWithoutBackground() ? Theme.getColor(Theme.key_chat_stickerReplyNameText) : Theme.getColor(Theme.key_chat_outReplyNameText) });
+        parameters.put(REPLY_TEXT_COLOR, new Integer[] { Theme.getColor(Theme.key_chat_replyPanelMessage), currentMessageObject.shouldDrawWithoutBackground() ? Theme.getColor(Theme.key_chat_stickerReplyMessageText) : Theme.getColor(Theme.key_chat_outReplyMessageText) });
 
         // finishing x & y
         parameters.put(X, new Integer[] { startX, endX });
@@ -322,7 +336,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
         // reply
         parameters.put(REPLY_OFFSET_X, new Integer[] { startReplyX, 0 });
-        parameters.put(REPLY_OFFSET_Y, new Integer[] { -AndroidUtilities.dp(6), 0 });
+        parameters.put(REPLY_OFFSET_Y, new Integer[] { startReplyY, 0 });
 
         // ANIMATION
         animator = ValueAnimator.ofFloat(0, 1);
@@ -387,6 +401,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
                 if (keyboardHeight > 0) {
                     requestLayout();
                 }
+                replyNameColor = blendColor(REPLY_NAME_COLOR, emojiInterpolation);
+                replyTextColor = blendColor(REPLY_TEXT_COLOR, emojiInterpolation);
+                replySystemAlphaFactor = lerpInt(REPLY_SYSTEM_ALPHA, emojiInterpolation);
 
                 // x
                 additionalOffsetX = (int) (((Integer[][]) parameters.get(EMOJI_PHOTO_COORDS))[0][0] - currentPhotoCoords[0]);
@@ -403,7 +420,11 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             // x
             float xInterpolation = xInterpolator.getInterpolation(ratio);
             float animationOffsetX = additionalOffsetX + lerpInt(X, xInterpolation);
-//            setAnimationOffsetX(animationOffsetX);
+            if (globalAnimation.isImage()) {
+                currentPhotoCoords[0] += animationOffsetX;
+            } else {
+                setAnimationOffsetX(animationOffsetX);
+            }
 
             // y
             if (!isCorrectionAnimationStarted) {
@@ -423,9 +444,6 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             // reply
             replyAnimationOffsetX = lerpInt(REPLY_OFFSET_X, replyInterpolation);
             replyAnimationOffsetY = lerpInt(REPLY_OFFSET_Y, replyInterpolation);
-            if (globalAnimation.isImage()) {
-                replyAnimationOffsetX -= animationOffsetX;
-            }
             replyAnimationLineState = replyInterpolation;
 
             isAnimationAtLeastOneTick = true;
