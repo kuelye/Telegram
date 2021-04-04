@@ -15,7 +15,7 @@ import java.util.Arrays;
 public class BackgroundAnimation extends BaseAnimation {
 
     public final static int POINTS_COUNT = 4;
-    private final static int[] DEFAULT_COLORS = { 0xFF2C624B, 0xFFFFF3BD, 0xFF739975, 0xFFFADF71 }; // TODO [CONTEST] { 0xFFFFF3BD, 0xFF739975, 0xFFFADF71, 0xFF2C624B };
+    private final static int[] DEFAULT_COLORS = { 0xFFFFF6BF, 0xFF76A076, 0xFFF6E477, 0xFF316B4D }; // TODO [CONTEST] { 0xFFFFF3BD, 0xFF739975, 0xFFFADF71, 0xFF2C624B };
 
     public final static int SEND_MESSAGE_INTERPOLATOR_ID = 0;
     public final static int OPEN_CHAT_INTERPOLATOR_ID = 1;

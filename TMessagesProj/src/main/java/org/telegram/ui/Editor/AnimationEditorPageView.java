@@ -31,24 +31,50 @@ import org.telegram.ui.Components.RecyclerListView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnimationEditorPageView extends RecyclerListView {
+public class AnimationEditorPageView extends RecyclerListView implements AnimationController.OnAnimationChangedListener {
 
+    private final AnimationType animationType;
+    private final Delegate delegate;
+
+    private final Adapter adapter;
     private final List<BaseItem> items = new ArrayList<>();
     private final List<InterpolatorItem> interpolatorItems = new ArrayList<>();
 
     public AnimationEditorPageView(@NonNull Context context, AnimationType animationType, Delegate delegate) {
         super(context);
+        this.animationType = animationType;
+        this.delegate = delegate;
 
         // setup RecyclerListView
         setVerticalScrollBarEnabled(false);
         setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false));
-        Adapter adapter = new Adapter();
+        adapter = new Adapter();
         setAdapter(adapter);
         setOnItemClickListener((view, position, x, y) -> {
             getItem(position).click(view);
         });
+    }
 
-        // add items
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        onAnimationChanged(null);
+        AnimationController.addOnAnimationChangedListener(null, this);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        AnimationController.removeOnAnimationChangedListener(null, this);
+    }
+
+    @Override
+    public void onAnimationChanged(AnimationType animationType) {
+        items.clear();
+        updateItems();
+    }
+
+    private void updateItems() {
         BaseAnimation animation = AnimationController.getAnimation(animationType);
         if (animation == null) return;
         BaseAnimationSetting[] settings = animation.getSettings();
@@ -335,7 +361,7 @@ public class AnimationEditorPageView extends RecyclerListView {
 
         @Override
         void bind(Context context, View view) {
-            // TODO
+            // stub
         }
     }
 

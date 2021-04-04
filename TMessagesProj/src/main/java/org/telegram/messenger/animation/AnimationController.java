@@ -83,10 +83,22 @@ public class AnimationController {
     }
 
     public static void emitAnimationChange(AnimationType animationType) {
-        List<OnAnimationChangedListener> listeners = getInstance().listeners.get(animationType);
-        if (listeners != null) {
-            for (OnAnimationChangedListener listener : listeners) {
-                listener.onAnimationChanged();
+        List<OnAnimationChangedListener> listeners;
+        if (animationType == null) {
+            for (AnimationType iType : getInstance().listeners.keySet()) {
+                listeners = getInstance().listeners.get(iType);
+                if (listeners != null) {
+                    for (OnAnimationChangedListener listener : listeners) {
+                        listener.onAnimationChanged(animationType);
+                    }
+                }
+            }
+        } else {
+            listeners = getInstance().listeners.get(animationType);
+            if (listeners != null) {
+                for (OnAnimationChangedListener listener : listeners) {
+                    listener.onAnimationChanged(animationType);
+                }
             }
         }
     }
@@ -102,6 +114,7 @@ public class AnimationController {
         for (BaseAnimation animation : getInstance().animations.values()) {
             animation.restoreToDefault();
         }
+        emitAnimationChange(null);
     }
 
     private JSONObject toJson() {
@@ -118,6 +131,6 @@ public class AnimationController {
     }
 
     public interface OnAnimationChangedListener {
-        void onAnimationChanged();
+        void onAnimationChanged(AnimationType animationType);
     }
 }

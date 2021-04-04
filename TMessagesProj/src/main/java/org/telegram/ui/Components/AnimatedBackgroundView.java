@@ -92,13 +92,12 @@ public class AnimatedBackgroundView extends View implements AnimationController.
         framePaint = new Paint(Paint.FILTER_BITMAP_FLAG);
 
         updateAnimation();
-        recalculatePoints();
-        recalculateBitmap();
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+        updateAnimation();
         AnimationController.addOnAnimationChangedListener(AnimationType.BACKGROUND, this);
     }
 
@@ -138,7 +137,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     }
 
     @Override
-    public void onAnimationChanged() {
+    public void onAnimationChanged(AnimationType animationType) {
         updateAnimation();
     }
 
@@ -289,7 +288,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
 
     private void updateAnimation() {
         animation = AnimationController.getBackgroundAnimation();
-        invalidate();
+        updateByState();
     }
 
     private void updateByState() {
