@@ -18,7 +18,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.animation.BaseChatAnimation;
-import org.telegram.messenger.animation.EmojiOrStickerAnimation;
+import org.telegram.messenger.animation.ImageAnimation;
 import org.telegram.messenger.animation.Interpolator;
 import org.telegram.messenger.animation.DefaultAnimation;
 import org.telegram.ui.ActionBar.Theme;
@@ -279,7 +279,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
             // reply
             startReplyX = (int) (textX - forwardNameX);
-        } else if (globalAnimation.isEmojiOrSticker()) {
+        } else if (globalAnimation.isImage()) {
             // emoji
             Paint paint = editText.getPaint();
             Paint.FontMetrics fontMetrics = paint.getFontMetrics();
@@ -370,9 +370,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
                 // reply
                 replyInterpolation = bubbleInterpolation;
-            } else if (globalAnimation.isEmojiOrSticker()) {
+            } else if (globalAnimation.isImage()) {
                 // emoji
-                Interpolator emojiInterpolator = ((EmojiOrStickerAnimation) globalAnimation).getEmojiScaleInterpolator();
+                Interpolator emojiInterpolator = ((ImageAnimation) globalAnimation).getEmojiScaleInterpolator();
                 float emojiInterpolation = emojiInterpolator.getInterpolation(ratio);
                 if (currentPhotoCoords == null) {
                     currentPhotoCoords = new float[4];
@@ -417,7 +417,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
             // reply
             replyAnimationOffsetX = lerpInt(REPLY_OFFSET_X, replyInterpolation);
-            if (globalAnimation.isEmojiOrSticker()) {
+            if (globalAnimation.isImage()) {
                 replyAnimationOffsetX -= animationOffsetX;
             }
             replyAnimationLineState = replyInterpolation;

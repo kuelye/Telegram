@@ -35,9 +35,11 @@ public class AnimationController {
         animations.put(AnimationType.SHORT_TEXT, new DefaultAnimation(AnimationType.SHORT_TEXT));
         animations.put(AnimationType.LONG_TEXT, new DefaultAnimation(AnimationType.LONG_TEXT));
         animations.put(AnimationType.LINK, new DefaultAnimation(AnimationType.LINK));
-        animations.put(AnimationType.EMOJI, new EmojiOrStickerAnimation(AnimationType.EMOJI));
-        animations.put(AnimationType.STICKER, new EmojiOrStickerAnimation(AnimationType.STICKER));
+        animations.put(AnimationType.EMOJI, new ImageAnimation(AnimationType.EMOJI));
+        animations.put(AnimationType.PHOTO, new ImageAnimation(AnimationType.PHOTO));
+        animations.put(AnimationType.STICKER, new ImageAnimation(AnimationType.STICKER));
         animations.put(AnimationType.VOICE, new DefaultAnimation(AnimationType.VOICE));
+        animations.put(AnimationType.VIDEO, new DefaultAnimation(AnimationType.VIDEO));
 
         String savedAnimations = MessagesController.getGlobalMainSettings().getString("animations", null);
         if (savedAnimations == null) {

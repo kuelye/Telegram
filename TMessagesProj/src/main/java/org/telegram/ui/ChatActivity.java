@@ -15326,6 +15326,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                     } else if (obj.type == 2) {
                         animationType = AnimationType.VOICE;
+                    } else if (obj.type == 1) {
+                        animationType = AnimationType.PHOTO;
+                    } else if (obj.type == 5) {
+                        animationType = AnimationType.VIDEO;
                     }
                     if (animationType != null) {
                         animateEnterMessage(obj, animationType);

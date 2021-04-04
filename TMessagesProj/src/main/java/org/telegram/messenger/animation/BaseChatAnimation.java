@@ -73,12 +73,16 @@ public abstract class BaseChatAnimation extends BaseAnimation {
         return getAnimationType() == AnimationType.SHORT_TEXT || getAnimationType() == AnimationType.LONG_TEXT || getAnimationType() == AnimationType.LINK;
     }
 
-    public boolean isEmojiOrSticker() {
-        return isEmoji() || isSticker();
+    public boolean isImage() {
+        return isEmoji() || isSticker() || isPhoto();
     }
 
     public boolean isEmoji() {
         return getAnimationType() == AnimationType.EMOJI;
+    }
+
+    public boolean isPhoto() {
+        return getAnimationType() == AnimationType.PHOTO;
     }
 
     public boolean isSticker() {
