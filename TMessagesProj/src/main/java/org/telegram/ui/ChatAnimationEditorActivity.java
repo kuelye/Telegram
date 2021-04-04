@@ -1,6 +1,7 @@
 package org.telegram.ui;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 
 import org.telegram.messenger.LocaleController;
@@ -19,8 +20,6 @@ public class ChatAnimationEditorActivity extends BaseChatAnimationActivity {
     private final static int SHARE_PARAMETERS_MENU_ITEM_ID = 0;
     private final static int IMPORT_PARAMETERS_MENU_ITEM_ID = 1;
     private final static int RESTORE_TO_DEFAULT_MENU_ITEM_ID = 2;
-
-    private AnimationEditorView editorView;
 
     @Override
     public View createView(Context context) {
@@ -85,6 +84,11 @@ public class ChatAnimationEditorActivity extends BaseChatAnimationActivity {
         @Override
         protected String getTabTitle(int position) {
             return AnimationType.values()[position].getTitle();
+        }
+
+        @Override
+        protected void onSamePageSelected(int page) {
+            ((AnimationEditorPageView) viewPagerAdapter.getView(page)).smoothScrollToPosition(0);
         }
 
         private class Adapter extends BaseAdapter {

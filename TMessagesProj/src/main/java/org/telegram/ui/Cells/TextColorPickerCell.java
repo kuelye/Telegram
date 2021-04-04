@@ -72,7 +72,9 @@ public class TextColorPickerCell extends TextSettingsCell {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        changingAnimator.cancel();
+        if (changingAnimator != null) {
+            changingAnimator.cancel();
+        }
     }
 
     public int getColor() {

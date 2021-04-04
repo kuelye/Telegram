@@ -44,7 +44,7 @@ public abstract class BaseAnimationEditorView extends LinearLayout {
 
             @Override
             public void onSamePageSelected() {
-                // TODO [CONTEST] scroll to top
+                BaseAnimationEditorView.this.onSamePageSelected(viewPager.getCurrentItem());
             }
 
             @Override
@@ -137,6 +137,10 @@ public abstract class BaseAnimationEditorView extends LinearLayout {
         tabsView.finishAddingTabs(true);
     }
 
+    protected void onSamePageSelected(int page) {
+        // stub
+    }
+
     protected abstract static class BaseAdapter extends PagerAdapter {
 
         protected final Context context;
@@ -186,6 +190,14 @@ public abstract class BaseAnimationEditorView extends LinearLayout {
         public void onDetached() {
             for (int i = 0, l = views.length; i < l; i++) {
                 views[i] = null;
+            }
+        }
+
+        public View getView(int position) {
+            if (position < 0 || position >= views.length) {
+                return null;
+            } else {
+                return views[position];
             }
         }
     }
