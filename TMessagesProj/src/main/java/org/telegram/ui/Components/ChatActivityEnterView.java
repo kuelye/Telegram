@@ -5925,7 +5925,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     delegate.onMessageSend(null, true, 0);
                 }
             });
-            sizeNotifierLayout.addView(botKeyboardView, sizeNotifierLayout.getChildCount() - 1);
+            sizeNotifierLayout.addView(botKeyboardView, sizeNotifierLayout.getChildCount() - 5);
         }
         botButtonsMessageObject = messageObject;
         botReplyMarkup = messageObject != null && messageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyKeyboardMarkup ? (TLRPC.TL_replyKeyboardMarkup) messageObject.messageOwner.reply_markup : null;
@@ -6386,7 +6386,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 return stickersTabOpen && !(!stickersExpanded && messageEditText.length() > 0) && emojiView.areThereAnyStickers() && !waitingForKeyboardOpen;
             }
         });
-        sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 1);
+        sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 5);
         checkChannelRights();
     }
 
@@ -6464,7 +6464,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             int previusHeight = 0;
             if (contentType == 0) {
                 if (emojiView.getParent() == null) {
-                    sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 1);
+                    sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 5);
                 }
                 samePannelWasVisible = emojiViewVisible && emojiView.getVisibility() == View.VISIBLE;
                 emojiView.setVisibility(VISIBLE);

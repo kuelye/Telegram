@@ -84,6 +84,7 @@ import android.widget.Space;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.ChatListItemAnimator;
@@ -392,7 +393,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private boolean showPinBulletin;
     private int pinBullerinTag;
     private boolean openKeyboardOnAttachMenuClose;
-    private FrameLayout animatedMessagesOverlay;
+    private AnimatedMessagesOverlay animatedMessagesOverlay;
 
     private MessageObject hintMessageObject;
     private int hintMessageType;
@@ -2775,6 +2776,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     } else if (child == chatListView || child == animatedMessagesOverlay) {
                         int contentWidthSpec = MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY);
                         int h = heightSize - listViewTopHeight - (inPreviewMode && Build.VERSION.SDK_INT >= 21 ? AndroidUtilities.statusBarHeight : 0);
+                        if (child == animatedMessagesOverlay) {
+                            h += AndroidUtilities.dp(49);
+                        }
                         if (keyboardSize > AndroidUtilities.dp(20) && getLayoutParams().height < 0) {
                             h += keyboardSize;
                             if (child == animatedMessagesOverlay) {
@@ -4741,7 +4745,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             pinnedMessageView.setVisibility(View.GONE);
             pinnedMessageView.setBackgroundResource(R.drawable.blockpanel);
             pinnedMessageView.getBackground().setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chat_topPanelBackground), PorterDuff.Mode.MULTIPLY));
-            contentView.addView(pinnedMessageView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 50, Gravity.TOP | Gravity.LEFT));
             pinnedMessageView.setOnClickListener(v -> {
                 wasManualScroll = true;
                 if (isThreadChat()) {
@@ -5787,8 +5790,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         };
         contentView.addView(topUndoView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.LEFT, 8, 8, 8, 0));
-
-        contentView.addView(actionBar);
 
         overlayView = new View(context);
         overlayView.setOnTouchListener((v, event) -> {
@@ -7037,8 +7038,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         });
 
-        animatedMessagesOverlay = new FrameLayout(context);
+        animatedMessagesOverlay = new AnimatedMessagesOverlay(context);
         contentView.addView(animatedMessagesOverlay);
+        contentView.addView(pinnedMessageView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 50, Gravity.TOP | Gravity.LEFT));
+        contentView.addView(actionBar);
 
         contentView.addView(textSelectionHelper.getOverlayView(context));
         fireworksOverlay = new FireworksOverlay(context);
@@ -23116,8 +23119,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             return;
         }
 
-        animatedMessagesOverlay.bringToFront();
-
         animateBackground(BackgroundAnimation.SEND_MESSAGE_INTERPOLATOR_ID);
 
         for (int i = 0; i < animatedCells.size(); i++) {
@@ -23191,6 +23192,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private void animateBackground(int animationId) {
         if (animatedBackgroundView != null) {
             animatedBackgroundView.animate(AnimationController.getBackgroundAnimation().getInterpolator(animationId));
+        }
+    }
+
+    private static class AnimatedMessagesOverlay extends FrameLayout {
+
+        public AnimatedMessagesOverlay(@NonNull Context context) {
+            super(context);
         }
     }
 }
