@@ -241,6 +241,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.telegram.messenger.animation.AnimationType.EMOJI;
+import static org.telegram.messenger.animation.AnimationType.LINK;
 import static org.telegram.messenger.animation.AnimationType.LONG_TEXT;
 import static org.telegram.messenger.animation.AnimationType.SHORT_TEXT;
 import static org.telegram.messenger.animation.AnimationType.STICKER;
@@ -15317,15 +15318,17 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     Log.v("ChatActivity", "GUB processNewMessages: type=" + obj.type + ", linesCount=" + obj.linesCount + ", ?=" + obj.isAnimatedEmoji() + ", " + obj.emojiAnimatedSticker);
                     if (obj.type == 15) {
                         if (obj.isAnimatedEmoji()) {
-                            animationType = EMOJI;
+                            animationType = AnimationType.EMOJI;
                         } else {
-                            animationType = STICKER;
+                            animationType = AnimationType.STICKER;
                         }
                     } else if (obj.type == 0) {
-                        if (obj.linesCount > 1) {
-                            animationType = LONG_TEXT;
+                        if (obj.linkDescription != null) {
+                            animationType = AnimationType.LINK;
+                        } else if (obj.linesCount > 1) {
+                            animationType = AnimationType.LONG_TEXT;
                         } else {
-                            animationType = SHORT_TEXT;
+                            animationType = AnimationType.SHORT_TEXT;
                         }
                     }
                     if (animationType != null) {

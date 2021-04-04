@@ -73,7 +73,7 @@ public class Interpolator {
             }
             jsonObject.put("c", jsonCs);
             JSONArray jsonTs = new JSONArray();
-            for (int i = 0; i < 4; ++ i) {
+            for (int i = 0; i < 2; ++ i) {
                 jsonTs.put(i, ts[i]);
             }
             jsonObject.put("t", jsonTs);

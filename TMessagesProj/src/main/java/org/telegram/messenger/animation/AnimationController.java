@@ -34,6 +34,7 @@ public class AnimationController {
         animations.put(AnimationType.BACKGROUND, new BackgroundAnimation());
         animations.put(AnimationType.SHORT_TEXT, new TextAnimation(AnimationType.SHORT_TEXT));
         animations.put(AnimationType.LONG_TEXT, new TextAnimation(AnimationType.LONG_TEXT));
+        animations.put(AnimationType.LINK, new TextAnimation(AnimationType.LINK));
         animations.put(AnimationType.EMOJI, new EmojiOrStickerAnimation(AnimationType.EMOJI));
         animations.put(AnimationType.STICKER, new EmojiOrStickerAnimation(AnimationType.STICKER));
 
