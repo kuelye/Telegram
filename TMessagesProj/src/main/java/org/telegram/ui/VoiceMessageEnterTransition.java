@@ -3,9 +3,7 @@ package org.telegram.ui;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
-import android.annotation.SuppressLint;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -18,9 +16,11 @@ import android.widget.FrameLayout;
 
 import androidx.core.graphics.ColorUtils;
 
-import com.google.android.exoplayer2.util.Log;
-
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.animation.AnimationController;
+import org.telegram.messenger.animation.AnimationType;
+import org.telegram.messenger.animation.DefaultAnimation;
+import org.telegram.messenger.animation.Interpolator;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Components.ChatActivityEnterView;
@@ -39,11 +39,11 @@ public class VoiceMessageEnterTransition {
 
     public VoiceMessageEnterTransition(FrameLayout containerView, ChatMessageCell messageView, ChatActivityEnterView chatActivityEnterView, RecyclerListView listView) {
 
-        fromRadius = chatActivityEnterView.getRecordCicle().drawingCircleRadius;
+        fromRadius = chatActivityEnterView.getRecordCircle().drawingCircleRadius;
 
         messageView.setVoiceTransitionInProgress(true);
 
-        ChatActivityEnterView.RecordCircle recordCircle = chatActivityEnterView.getRecordCicle();
+        ChatActivityEnterView.RecordCircle recordCircle = chatActivityEnterView.getRecordCircle();
         chatActivityEnterView.startMessageTransition();
         recordCircle.voiceEnterTransitionInProgress = true;
         recordCircle.skipDraw = true;
@@ -146,14 +146,17 @@ public class VoiceMessageEnterTransition {
 
         containerView.addView(view);
 
+        DefaultAnimation animation = (DefaultAnimation) AnimationController.getAnimation(AnimationType.VOICE);
+        Interpolator interpolator = animation.getBubbleShapeInterpolator();
+
         animator = ValueAnimator.ofFloat(0f, 1f);
         animator.addUpdateListener(valueAnimator -> {
-            progress = (float) valueAnimator.getAnimatedValue();
+            progress = interpolator.getInterpolation((float) valueAnimator.getAnimatedValue());
             view.invalidate();
         });
 
         animator.setInterpolator(new LinearInterpolator());
-        animator.setDuration(220);
+        animator.setDuration(animation.getDuration());
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {

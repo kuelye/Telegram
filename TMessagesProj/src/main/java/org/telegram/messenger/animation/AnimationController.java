@@ -32,11 +32,12 @@ public class AnimationController {
 
     private AnimationController() {
         animations.put(AnimationType.BACKGROUND, new BackgroundAnimation());
-        animations.put(AnimationType.SHORT_TEXT, new TextAnimation(AnimationType.SHORT_TEXT));
-        animations.put(AnimationType.LONG_TEXT, new TextAnimation(AnimationType.LONG_TEXT));
-        animations.put(AnimationType.LINK, new TextAnimation(AnimationType.LINK));
+        animations.put(AnimationType.SHORT_TEXT, new DefaultAnimation(AnimationType.SHORT_TEXT));
+        animations.put(AnimationType.LONG_TEXT, new DefaultAnimation(AnimationType.LONG_TEXT));
+        animations.put(AnimationType.LINK, new DefaultAnimation(AnimationType.LINK));
         animations.put(AnimationType.EMOJI, new EmojiOrStickerAnimation(AnimationType.EMOJI));
         animations.put(AnimationType.STICKER, new EmojiOrStickerAnimation(AnimationType.STICKER));
+        animations.put(AnimationType.VOICE, new DefaultAnimation(AnimationType.VOICE));
 
         String savedAnimations = MessagesController.getGlobalMainSettings().getString("animations", null);
         if (savedAnimations == null) {

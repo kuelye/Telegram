@@ -608,7 +608,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
     private int notificationsIndex;
 
-    private class RecordDot extends View {
+    public class RecordDot extends View {
 
         private float alpha;
         private long lastUpdateTime;
@@ -6386,7 +6386,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 return stickersTabOpen && !(!stickersExpanded && messageEditText.length() > 0) && emojiView.areThereAnyStickers() && !waitingForKeyboardOpen;
             }
         });
-        sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 3);
+        sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 1);
         checkChannelRights();
     }
 
@@ -6464,7 +6464,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             int previusHeight = 0;
             if (contentType == 0) {
                 if (emojiView.getParent() == null) {
-                    sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 3);
+                    sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 1);
                 }
                 samePannelWasVisible = emojiViewVisible && emojiView.getVisibility() == View.VISIBLE;
                 emojiView.setVisibility(VISIBLE);
@@ -7930,11 +7930,19 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         return true;
     }
 
-    public RecordCircle getRecordCicle() {
+    public RecordCircle getRecordCircle() {
         return recordCircle;
     }
 
     public EditTextCaption getMessageEditText() {
         return messageEditText;
+    }
+
+    public RecordDot getRecordDot() {
+        return recordDot;
+    }
+
+    public TimerView getRecordTimerView() {
+        return recordTimerView;
     }
 }

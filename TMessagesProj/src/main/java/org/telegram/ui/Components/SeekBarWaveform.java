@@ -21,6 +21,7 @@ public class SeekBarWaveform {
 
     private static Paint paintInner;
     private static Paint paintOuter;
+    private float alpha = 1;
     private int thumbX = 0;
     private int thumbDX = 0;
     private float startX;
@@ -152,6 +153,10 @@ public class SeekBarWaveform {
         }
     }
 
+    public void setAlpha(float alpha) {
+        this.alpha = alpha;
+    }
+
     public boolean isDragging() {
         return pressed;
     }
@@ -223,6 +228,8 @@ public class SeekBarWaveform {
                 if (x < thumbX && x + AndroidUtilities.dp(2) < thumbX) {
                     drawLine(canvas,x, y, h, paintOuter);
                 } else {
+                    int alpha = paintOuter.getAlpha();
+                    paintInner.setAlpha((int) (this.alpha * alpha));
                     drawLine(canvas,x, y, h, paintInner);
                     if (x < thumbX) {
                         canvas.save();
@@ -230,10 +237,11 @@ public class SeekBarWaveform {
                         drawLine(canvas,x, y, h, paintOuter);
                         canvas.restore();
                     }
+                    paintInner.setAlpha(alpha);
                 }
                 if (clearProgress != 1f) {
                     int alpha = paintOuter.getAlpha();
-                    paintOuter.setAlpha((int) (alpha * (1f - clearProgress)));
+                    paintOuter.setAlpha((int) (this.alpha * alpha * (1f - clearProgress)));
                     if (x < clearFromX && x + AndroidUtilities.dp(2) < clearFromX) {
                         drawLine(canvas, x, y, h, paintOuter);
                     } else if (x < clearFromX) {

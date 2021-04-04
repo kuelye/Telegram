@@ -17,33 +17,43 @@ import androidx.core.graphics.ColorUtils;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.animation.AnimationType;
 import org.telegram.messenger.animation.BaseChatAnimation;
 import org.telegram.messenger.animation.EmojiOrStickerAnimation;
 import org.telegram.messenger.animation.Interpolator;
-import org.telegram.messenger.animation.TextAnimation;
+import org.telegram.messenger.animation.DefaultAnimation;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.ChatActivityEnterView;
 import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.RecyclerListView;
 
-import java.util.Arrays;
-
 public class AnimatedChatMessageCell extends ChatMessageCell {
 
-    private final static int X = 0;
-    private final static int Y = 1;
-    private final static int CORRECTED_Y = 2;
-    private final static int COLOR_BACKGROUND = 3;
-    private final static int BUBBLE_BACKGROUND_WIDTH = 4;
-    private final static int BUBBLE_BACKGROUND_RIGHT_OFFSET = 5;
-    private final static int TEXT_SIZE = 6;
-    private final static int TIME_ALPHA = 7;
-    private final static int EMOJI_PHOTO_COORDS = 8;
-    private final static int REPLY_OFFSET_X = 9;
-    private final static int REPLY_OFFSET_Y = 10;
-    private final static int REPLY_NAME_COLOR = 11;
-    private final static int REPLY_TEXT_COLOR = 12;
+    private static int COUNTER = 0;
+    private final static int X = COUNTER++;
+    private final static int Y = COUNTER++;
+    private final static int CORRECTED_Y = COUNTER++;
+    private final static int COLOR_BACKGROUND = COUNTER++;
+    private final static int COLOR_VOICE_DOT = COUNTER++;
+    private final static int COLOR_DURATION = COUNTER++;
+    private final static int BUBBLE_BACKGROUND_WIDTH = COUNTER++;
+    private final static int BUBBLE_BACKGROUND_RIGHT_OFFSET = COUNTER++;
+    private final static int BUBBLE_BACKGROUND_BOTTOM_OFFSET = COUNTER++;
+    private final static int BUBBLE_VOICE_DOT_OFFSET_X = COUNTER++;
+    private final static int BUBBLE_VOICE_DOT_OFFSET_Y = COUNTER++;
+    private final static int BUBBLE_VOICE_DOT_OFFSET_RADIUS = COUNTER++;
+    private final static int BUBBLE_VOICE_TIME_OFFSET_X = COUNTER++;
+    private final static int BUBBLE_VOICE_TIME_OFFSET_Y = COUNTER++;
+    private final static int BUBBLE_VOICE_WAVEFORM_ALPHA = COUNTER++;
+    private final static int BUBBLE_VOICE_BUTTON_OFFSET_X = COUNTER++;
+    private final static int BUBBLE_VOICE_BUTTON_OFFSET_Y = COUNTER++;
+    private final static int TEXT_SIZE = COUNTER++;
+    private final static int TEXT_SIZE_DURATION = COUNTER++;
+    private final static int TIME_ALPHA = COUNTER++;
+    private final static int EMOJI_PHOTO_COORDS = COUNTER++;
+    private final static int REPLY_OFFSET_X = COUNTER++;
+    private final static int REPLY_OFFSET_Y = COUNTER++;
+    private final static int REPLY_NAME_COLOR = COUNTER++;
+    private final static int REPLY_TEXT_COLOR = COUNTER++;
 
     private final BaseChatAnimation globalAnimation;
     private final int duration;
@@ -57,6 +67,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private int enterHeightDelta;
 
     private final SparseArray<Object[]> parameters = new SparseArray<>();
+    private int[] location = new int[2];
 
     private boolean isRealCellLayoutDone = false;
     private boolean isAnimationCorrected = true;
@@ -213,12 +224,16 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         // reply
         int startReplyX = 0;
 
-        if (globalAnimation.isText()) {
+        if (globalAnimation.isDefault()) {
             // x
-            endX = textX - startEditLocation[0];
+            if (globalAnimation.isText()) {
+                endX = textX - startEditLocation[0];
+            }
 
             // y
-            startY += editText.getBaseline() - getBottomBaseline();
+            if (globalAnimation.isText()) {
+                startY += editText.getBaseline() - getBottomBaseline();
+            }
 
             // bubble
             int backgroundDrawableRightOffset = backgroundWidth - backgroundDrawableRight + AndroidUtilities.dp(2);
@@ -226,16 +241,30 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
                 realCell.backgroundWidth - startEditLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(11) + getExtraTextX() + backgroundDrawableRightOffset,
                 realCell.backgroundWidth
             });
-            parameters.put(BUBBLE_BACKGROUND_RIGHT_OFFSET, new Integer[] {
-                backgroundDrawableRightOffset,
-                0
-            });
+            parameters.put(BUBBLE_BACKGROUND_RIGHT_OFFSET, new Integer[] { backgroundDrawableRightOffset, 0 });
+            if (globalAnimation.isVoice()) {
+                int startOffsetBottom = getMeasuredHeight() - editText.getMeasuredHeight();
+                parameters.put(BUBBLE_BACKGROUND_BOTTOM_OFFSET, new Integer[] { startOffsetBottom, 0});
+                endY += startOffsetBottom;
+                ChatActivityEnterView.RecordDot recordDot = enterView.getRecordDot();
+                recordDot.getLocationOnScreen(location);
+                parameters.put(BUBBLE_VOICE_DOT_OFFSET_X, new Integer[] { location[0] + recordDot.getMeasuredWidth() / 2 - audioDotX, 0});
+                parameters.put(BUBBLE_VOICE_DOT_OFFSET_Y, new Integer[] { location[1] + recordDot.getMeasuredHeight() / 2 - startOverlayLocation[1] - startY - audioDotY, 0});
+                parameters.put(BUBBLE_VOICE_DOT_OFFSET_RADIUS, new Integer[] { AndroidUtilities.dp(5), AndroidUtilities.dp(3) });
+                parameters.put(BUBBLE_VOICE_TIME_OFFSET_X, new Integer[] { - 100, 0 });
+                ChatActivityEnterView.TimerView timerView = enterView.getRecordTimerView();
+                timerView.getLocationOnScreen(location);
+                parameters.put(BUBBLE_VOICE_TIME_OFFSET_X, new Integer[] { location[0] - audioTimeX, 0 });
+                parameters.put(BUBBLE_VOICE_TIME_OFFSET_Y, new Integer[] { location[1] - startOverlayLocation[1] + timerView.getMeasuredHeight() / 2 - startY - audioTimeY - AndroidUtilities.dp(6.5f), 0 });
+                parameters.put(BUBBLE_VOICE_WAVEFORM_ALPHA, new Integer[] { 0, 1 });
+                voiceTransitionInPorgress = true;
+            }
 
             // text
-            parameters.put(TEXT_SIZE, new Float[] {
-                editText.getTextSize(),
-                (float) AndroidUtilities.dp(SharedConfig.fontSize)
-            });
+            parameters.put(TEXT_SIZE, new Float[] { editText.getTextSize(), (float) AndroidUtilities.dp(SharedConfig.fontSize)});
+            if (globalAnimation.isVoice()) {
+                parameters.put(TEXT_SIZE_DURATION, new Integer[] { AndroidUtilities.dp(15), AndroidUtilities.dp(12) });
+            }
 
             // colors
             int startBackgroundColor = Theme.getColor(Theme.key_windowBackgroundWhite);
@@ -243,6 +272,10 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             backgroundPaint.setColor(startBackgroundColor);
             parameters.put(REPLY_NAME_COLOR, new Integer[] { Theme.getColor(Theme.key_chat_replyPanelName), currentMessageObject.shouldDrawWithoutBackground() ? Theme.getColor(Theme.key_chat_stickerReplyNameText) : Theme.getColor(Theme.key_chat_outReplyNameText) });
             parameters.put(REPLY_TEXT_COLOR, new Integer[] { Theme.getColor(Theme.key_chat_replyPanelMessage), currentMessageObject.shouldDrawWithoutBackground() ? Theme.getColor(Theme.key_chat_stickerReplyMessageText) : Theme.getColor(Theme.key_chat_outReplyMessageText) });
+            if (globalAnimation.isVoice()) {
+                parameters.put(COLOR_VOICE_DOT, new Integer[] { Theme.getColor(Theme.key_chat_recordedVoiceDot), Theme.getColor(Theme.key_chat_outVoiceSeekbarFill) });
+                parameters.put(COLOR_DURATION, new Integer[] { Theme.getColor(Theme.key_chat_recordTime), Theme.getColor(Theme.key_chat_outTimeText) });
+            }
 
             // reply
             startReplyX = (int) (textX - forwardNameX);
@@ -289,7 +322,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         animator = ValueAnimator.ofFloat(0, 1);
         animator.setDuration(duration);
         animator.addUpdateListener(animation -> {
-            int minHeight = 0;
+            boolean needRequestLayout = false;
             float ratio = (float) animation.getAnimatedValue();
             int additionalOffsetY = 0;
 
@@ -298,23 +331,42 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
             int additionalOffsetX = 0;
             float replyInterpolation = 0;
-            if (globalAnimation.isText()) {
+            if (globalAnimation.isDefault()) {
                 // bubble
-                Interpolator bubbleInterpolator = ((TextAnimation) globalAnimation).getBubbleShapeInterpolator();
+                Interpolator bubbleInterpolator = ((DefaultAnimation) globalAnimation).getBubbleShapeInterpolator();
                 float bubbleInterpolation = bubbleInterpolator.getInterpolation(ratio);
                 backgroundWidth = (int) lerpInt(BUBBLE_BACKGROUND_WIDTH, bubbleInterpolation);
                 backgroundDrawableRightOffset = (int) lerpInt(BUBBLE_BACKGROUND_RIGHT_OFFSET, bubbleInterpolation);
                 additionalOffsetX = backgroundWidth - (int) parameters.get(BUBBLE_BACKGROUND_WIDTH)[0] + (int) parameters.get(BUBBLE_BACKGROUND_RIGHT_OFFSET)[0];
+                if (globalAnimation.isVoice()) {
+                    additionalOffsetBottom = (int) lerpInt(BUBBLE_BACKGROUND_BOTTOM_OFFSET, bubbleInterpolation);
+                    additionalOffsetY -= (int) parameters.get(BUBBLE_BACKGROUND_BOTTOM_OFFSET)[0] - additionalOffsetBottom;
+                    audioDotOffsetX = (int) lerpInt(BUBBLE_VOICE_DOT_OFFSET_X, bubbleInterpolation);
+                    audioDotOffsetY = (int) lerpInt(BUBBLE_VOICE_DOT_OFFSET_Y, bubbleInterpolation);
+                    audioDotRadius = lerpInt(BUBBLE_VOICE_DOT_OFFSET_RADIUS, bubbleInterpolation);
+                    audioTimeOffsetX = (int) lerpInt(BUBBLE_VOICE_TIME_OFFSET_X, bubbleInterpolation);
+                    audioTimeOffsetY = (int) lerpInt(BUBBLE_VOICE_TIME_OFFSET_Y, bubbleInterpolation);
+                    audioWaveformAlpha = lerpInt(BUBBLE_VOICE_WAVEFORM_ALPHA, bubbleInterpolation);
+                }
 
                 // text
-                Interpolator textInterpolator = ((TextAnimation) globalAnimation).getTextScaleInterpolator();
+                Interpolator textInterpolator = ((DefaultAnimation) globalAnimation).getTextScaleInterpolator();
                 textSize = lerpFloat(TEXT_SIZE, textInterpolator.getInterpolation(ratio));
+                if (globalAnimation.isVoice()) {
+                    playingMessageDurationTextSize = lerpInt(TEXT_SIZE_DURATION, textInterpolator.getInterpolation(ratio));
+                    updatePlayingMessageProgress();
+                }
 
                 // color
-                Interpolator colorInterpolator = ((TextAnimation) globalAnimation).getColorChangeInterpolator();
-                backgroundPaint.setColor(blendColor(COLOR_BACKGROUND, colorInterpolator.getInterpolation(ratio)));
-                replyNameColor = blendColor(REPLY_NAME_COLOR, colorInterpolator.getInterpolation(ratio));
-                replyTextColor = blendColor(REPLY_TEXT_COLOR, colorInterpolator.getInterpolation(ratio));
+                Interpolator colorInterpolator = ((DefaultAnimation) globalAnimation).getColorChangeInterpolator();
+                float colorInterpolation = colorInterpolator.getInterpolation(ratio);
+                backgroundPaint.setColor(blendColor(COLOR_BACKGROUND, colorInterpolation));
+                replyNameColor = blendColor(REPLY_NAME_COLOR, colorInterpolation);
+                replyTextColor = blendColor(REPLY_TEXT_COLOR, colorInterpolation);
+                if (globalAnimation.isVoice()) {
+                    audioDotColor = blendColor(COLOR_VOICE_DOT, colorInterpolation);
+                    playingMessageDurationColor = blendColor(COLOR_DURATION, colorInterpolation);
+                }
 
                 // reply
                 replyInterpolation = bubbleInterpolation;
@@ -346,7 +398,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             // x
             float xInterpolation = xInterpolator.getInterpolation(ratio);
             float animationOffsetX = additionalOffsetX + lerpInt(X, xInterpolation);
-            setAnimationOffsetX(animationOffsetX);
+//            setAnimationOffsetX(animationOffsetX);
 
             // y
             if (!isCorrectionAnimationStarted) {

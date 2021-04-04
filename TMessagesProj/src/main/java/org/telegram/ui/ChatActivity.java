@@ -240,12 +240,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.telegram.messenger.animation.AnimationType.EMOJI;
-import static org.telegram.messenger.animation.AnimationType.LINK;
-import static org.telegram.messenger.animation.AnimationType.LONG_TEXT;
-import static org.telegram.messenger.animation.AnimationType.SHORT_TEXT;
-import static org.telegram.messenger.animation.AnimationType.STICKER;
-
 @SuppressWarnings("unchecked")
 public class ChatActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, DialogsActivity.DialogsActivityDelegate, LocationActivity.LocationActivityDelegate, ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate {
 
@@ -15330,6 +15324,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         } else {
                             animationType = AnimationType.SHORT_TEXT;
                         }
+                    } else if (obj.type == 2) {
+                        animationType = AnimationType.VOICE;
                     }
                     if (animationType != null) {
                         animateEnterMessage(obj, animationType);

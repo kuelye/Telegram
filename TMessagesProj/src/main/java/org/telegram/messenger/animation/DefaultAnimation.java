@@ -2,13 +2,13 @@ package org.telegram.messenger.animation;
 
 import org.telegram.messenger.R;
 
-public class TextAnimation extends BaseChatAnimation {
+public class DefaultAnimation extends BaseChatAnimation {
 
     public final static int BUBBLE_SHAPE_INTERPOLATOR_ID = 3;
     public final static int TEXT_SCALE_INTERPOLATOR_ID = 4;
     public final static int COLOR_CHANGE_INTERPOLATOR_ID = 5;
 
-    protected TextAnimation(AnimationType animationType) {
+    protected DefaultAnimation(AnimationType animationType) {
         super(animationType, 6);
     }
 

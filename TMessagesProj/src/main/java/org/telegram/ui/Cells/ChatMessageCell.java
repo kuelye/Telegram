@@ -447,8 +447,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     private boolean wasSending;
     private boolean checkOnlyButtonPressed;
-    private int buttonX;
-    private int buttonY;
+    protected int buttonX;
+    protected int buttonY;
     private int videoButtonX;
     private int videoButtonY;
     private int buttonState;
@@ -498,7 +498,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int seekBarX;
     private int seekBarY;
 
-    private StaticLayout durationLayout;
+    protected StaticLayout durationLayout;
     private int lastTime;
     private int timeWidthAudio;
     private int timeAudioX;
@@ -606,7 +606,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private Theme.MessageDrawable currentBackgroundSelectedDrawable;
     protected int backgroundDrawableLeft;
     protected int backgroundDrawableRight;
-    protected int backgroundDrawableRightOffset;
     protected int backgroundDrawableTop;
     protected int backgroundDrawableBottom;
     private int viaWidth;
@@ -789,6 +788,21 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     protected float replyAnimationOffsetY;
     protected int replyNameColor = -1;
     protected int replyTextColor = -1;
+    protected int backgroundDrawableRightOffset;
+    protected int additionalOffsetBottom;
+    protected int audioDotX;
+    protected int audioDotY;
+    protected float audioDotRadius = AndroidUtilities.dp(3);
+    protected int audioDotOffsetX;
+    protected int audioDotOffsetY;
+    protected int audioDotColor = -1;
+    protected int audioTimeX;
+    protected int audioTimeY;
+    protected int audioTimeOffsetX;
+    protected int audioTimeOffsetY;
+    protected float playingMessageDurationTextSize = -1;
+    protected int playingMessageDurationColor = -1;
+    protected float audioWaveformAlpha = 1;
 
     public ChatMessageCell(Context context) {
         super(context);
@@ -7540,6 +7554,16 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 Theme.chat_audioTimePaint.setColor(Theme.getColor(isDrawSelectionBackground() ? Theme.key_chat_inAudioDurationSelectedText : Theme.key_chat_inAudioDurationText));
                 radialProgress.setProgressColor(Theme.getColor(isDrawSelectionBackground() || buttonPressed != 0 ? Theme.key_chat_inAudioSelectedProgress : Theme.key_chat_inAudioProgress));
             }
+
+            if (playingMessageDurationColor != -1) {
+                Theme.chat_audioTimePaint.setColor(playingMessageDurationColor);
+            }
+            float savedTextSize = -1;
+            if (playingMessageDurationTextSize != -1) {
+                savedTextSize = Theme.chat_timePaint.getTextSize();
+                Theme.chat_audioTimePaint.setTextSize(playingMessageDurationTextSize);
+            }
+
             AudioVisualizerDrawable audioVisualizerDrawable;
             if (MediaController.getInstance().isPlayingMessage(currentMessageObject)) {
                 audioVisualizerDrawable = Theme.getCurrentAudiVisualizerDrawable();
@@ -7567,6 +7591,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.save();
             if (useSeekBarWaweform) {
                 canvas.translate(seekBarX + AndroidUtilities.dp(13), seekBarY);
+                seekBarWaveform.setAlpha(audioWaveformAlpha);
                 seekBarWaveform.draw(canvas, this);
             } else {
                 canvas.translate(seekBarX, seekBarY);
@@ -7575,13 +7600,17 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.restore();
 
             canvas.save();
-            canvas.translate(timeAudioX, AndroidUtilities.dp(44) + namesOffset + mediaOffsetY);
+            canvas.translate((audioTimeX = timeAudioX) + audioTimeOffsetX, (audioTimeY = AndroidUtilities.dp(44) + namesOffset + mediaOffsetY) + audioTimeOffsetY);
             durationLayout.draw(canvas);
             canvas.restore();
 
             if (currentMessageObject.type != 0 && currentMessageObject.isContentUnread()) {
-                Theme.chat_docBackPaint.setColor(Theme.getColor(currentMessageObject.isOutOwner() ? Theme.key_chat_outVoiceSeekbarFill : Theme.key_chat_inVoiceSeekbarFill));
-                canvas.drawCircle(timeAudioX + timeWidthAudio + AndroidUtilities.dp(6), AndroidUtilities.dp(51) + namesOffset + mediaOffsetY, AndroidUtilities.dp(3), Theme.chat_docBackPaint);
+                Theme.chat_docBackPaint.setColor(audioDotColor == -1 ? Theme.getColor(currentMessageObject.isOutOwner() ? Theme.key_chat_outVoiceSeekbarFill : Theme.key_chat_inVoiceSeekbarFill) : audioDotColor);
+                canvas.drawCircle((audioDotX = timeAudioX + timeWidthAudio + AndroidUtilities.dp(6)) + audioDotOffsetX, (audioDotY = AndroidUtilities.dp(51) + namesOffset + mediaOffsetY) + audioDotOffsetY, audioDotRadius, Theme.chat_docBackPaint);
+            }
+
+            if (savedTextSize != -1) {
+                Theme.chat_audioTimePaint.setTextSize(savedTextSize);
             }
         }
 
@@ -9079,7 +9108,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
-    private boolean isDrawSelectionBackground() {
+    protected boolean isDrawSelectionBackground() {
         return (isPressed() && isCheckPressed || !isCheckPressed && isPressed || isHighlighted) && !textIsSelectionMode();
     }
 
@@ -9789,6 +9818,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             } else {
                 offsetBottom = AndroidUtilities.dp(2);
             }
+            offsetBottom += additionalOffsetBottom;
             backgroundDrawableTop = additionalTop + (drawPinnedTop ? 0 : AndroidUtilities.dp(1));
             int backgroundHeight = layoutHeight - offsetBottom + additionalBottom;
             backgroundDrawableBottom = backgroundDrawableTop + backgroundHeight;

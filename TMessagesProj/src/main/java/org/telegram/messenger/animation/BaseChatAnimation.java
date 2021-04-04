@@ -65,6 +65,10 @@ public abstract class BaseChatAnimation extends BaseAnimation {
         return getInterpolator(TIME_APPEARS_INTERPOLATOR_ID);
     }
 
+    public boolean isDefault() {
+        return getAnimationType() == AnimationType.SHORT_TEXT || getAnimationType() == AnimationType.LONG_TEXT || getAnimationType() == AnimationType.LINK || isVoice();
+    }
+
     public boolean isText() {
         return getAnimationType() == AnimationType.SHORT_TEXT || getAnimationType() == AnimationType.LONG_TEXT || getAnimationType() == AnimationType.LINK;
     }
@@ -79,5 +83,9 @@ public abstract class BaseChatAnimation extends BaseAnimation {
 
     public boolean isSticker() {
         return getAnimationType() == AnimationType.STICKER;
+    }
+
+    public boolean isVoice() {
+        return getAnimationType() == AnimationType.VOICE;
     }
 }
