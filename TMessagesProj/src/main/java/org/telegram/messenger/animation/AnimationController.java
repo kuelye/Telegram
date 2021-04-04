@@ -128,10 +128,31 @@ public class AnimationController {
     }
 
     private void restoreToDefaultInternal() {
-        for (BaseAnimation animation : getInstance().animations.values()) {
+        for (BaseAnimation animation : animations.values()) {
             animation.restoreToDefault();
         }
-        emitAnimationChange(null);
+        emitAnimationChangeInternal(null);
+    }
+
+    private void emitAnimationChangeInternal(AnimationType animationType) {
+        List<OnAnimationChangedListener> listeners;
+        if (animationType == null) {
+            for (AnimationType type : this.listeners.keySet()) {
+                listeners = this.listeners.get(type);
+                if (listeners != null) {
+                    for (OnAnimationChangedListener listener : listeners) {
+                        listener.onAnimationChanged(animationType);
+                    }
+                }
+            }
+        } else {
+            listeners = this.listeners.get(animationType);
+            if (listeners != null) {
+                for (OnAnimationChangedListener listener : listeners) {
+                    listener.onAnimationChanged(animationType);
+                }
+            }
+        }
     }
 
     public interface OnAnimationChangedListener {

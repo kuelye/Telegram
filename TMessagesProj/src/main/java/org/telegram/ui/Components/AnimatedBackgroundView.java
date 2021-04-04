@@ -304,7 +304,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     }
 
     private void recalculateBitmap() {
-//        frame = generateBitmap();
+        frame = generateBitmap();
         if (frame != null) {
             frameMatrix.setScale((float) getWidth() / frame.getWidth(), (float) getHeight() / frame.getHeight());
         }
@@ -364,7 +364,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
         }
         Utilities.generateBackgroundBitmap(bitmap, points, colors);
 
-//        Log.v("GUB", "generateBitmap: elapsed=" + (System.currentTimeMillis() - now) + "ms");
+        Log.v("GUB", "generateBitmap: elapsed=" + (System.currentTimeMillis() - now) + "ms");
         return bitmap;
     }
 }
