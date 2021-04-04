@@ -6,7 +6,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -33,19 +32,17 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private final static int Y = COUNTER++;
     private final static int CORRECTED_Y = COUNTER++;
     private final static int COLOR_BACKGROUND = COUNTER++;
-    private final static int COLOR_VOICE_DOT = COUNTER++;
-    private final static int COLOR_DURATION = COUNTER++;
+    private final static int COLOR_RECORD_DOT = COUNTER++;
+    private final static int COLOR_RECORD_DURATION = COUNTER++;
     private final static int BUBBLE_BACKGROUND_WIDTH = COUNTER++;
     private final static int BUBBLE_BACKGROUND_RIGHT_OFFSET = COUNTER++;
     private final static int BUBBLE_BACKGROUND_BOTTOM_OFFSET = COUNTER++;
-    private final static int BUBBLE_VOICE_DOT_OFFSET_X = COUNTER++;
-    private final static int BUBBLE_VOICE_DOT_OFFSET_Y = COUNTER++;
-    private final static int BUBBLE_VOICE_DOT_OFFSET_RADIUS = COUNTER++;
-    private final static int BUBBLE_VOICE_TIME_OFFSET_X = COUNTER++;
-    private final static int BUBBLE_VOICE_TIME_OFFSET_Y = COUNTER++;
+    private final static int BUBBLE_RECORD_DOT_OFFSET_X = COUNTER++;
+    private final static int BUBBLE_RECORD_DOT_OFFSET_Y = COUNTER++;
+    private final static int BUBBLE_RECORD_DOT_RADIUS = COUNTER++;
+    private final static int BUBBLE_RECORD_TIME_OFFSET_X = COUNTER++;
+    private final static int BUBBLE_RECORD_TIME_OFFSET_Y = COUNTER++;
     private final static int BUBBLE_VOICE_WAVEFORM_ALPHA = COUNTER++;
-    private final static int BUBBLE_VOICE_BUTTON_OFFSET_X = COUNTER++;
-    private final static int BUBBLE_VOICE_BUTTON_OFFSET_Y = COUNTER++;
     private final static int TEXT_SIZE = COUNTER++;
     private final static int TEXT_SIZE_DURATION = COUNTER++;
     private final static int TIME_ALPHA = COUNTER++;
@@ -222,6 +219,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         enterHeightDelta += delegate.getChatActivityEnterView().getMeasuredHeight() - editText.getHeight() - AndroidUtilities.dp(4); // height of blocks above edit
         int endHeight = realCell.getMeasuredHeight();
         startY -= enterHeightDelta;
+        if (globalAnimation.isVideo()) {
+            startY -= AndroidUtilities.dp(200);
+        }
 
         // time
         Interpolator timeInterpolator = globalAnimation.getTimeAppearsInterpolator();
@@ -230,7 +230,6 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         // reply
         int startReplyX = 0;
         int startReplyY = 0;
-        Log.v("GUB", "should=" + currentMessageObject.shouldDrawWithoutBackground());
         if (globalAnimation.isDefault()) {
             // x
             if (globalAnimation.isText()) {
@@ -250,22 +249,32 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
                 realCell.backgroundWidth
             });
             parameters.put(BUBBLE_BACKGROUND_RIGHT_OFFSET, new Integer[] { backgroundDrawableRightOffset, 0 });
-            if (globalAnimation.isVoice()) {
-                int startOffsetBottom = getMeasuredHeight() - editText.getMeasuredHeight();
-                parameters.put(BUBBLE_BACKGROUND_BOTTOM_OFFSET, new Integer[] { startOffsetBottom, 0});
-                endY += startOffsetBottom;
+            if (globalAnimation.isVoice() || globalAnimation.isVideo()) {
+                if (globalAnimation.isVoice()) {
+                    int startOffsetBottom = getMeasuredHeight() - editText.getMeasuredHeight();
+                    parameters.put(BUBBLE_BACKGROUND_BOTTOM_OFFSET, new Integer[]{ startOffsetBottom, 0 });
+                    endY += startOffsetBottom;
+                    parameters.put(BUBBLE_VOICE_WAVEFORM_ALPHA, new Integer[]{0, 1});
+                    voiceTransitionInProgress = true;
+                } else {
+                    videoTransitionInProgress = true;
+                }
                 ChatActivityEnterView.RecordDot recordDot = enterView.getRecordDot();
                 recordDot.getLocationOnScreen(location);
-                parameters.put(BUBBLE_VOICE_DOT_OFFSET_X, new Integer[] { location[0] + recordDot.getMeasuredWidth() / 2 - audioDotX, 0});
-                parameters.put(BUBBLE_VOICE_DOT_OFFSET_Y, new Integer[] { location[1] + recordDot.getMeasuredHeight() / 2 - startOverlayLocation[1] - startY - audioDotY, 0});
-                parameters.put(BUBBLE_VOICE_DOT_OFFSET_RADIUS, new Integer[] { AndroidUtilities.dp(5), AndroidUtilities.dp(3) });
-                parameters.put(BUBBLE_VOICE_TIME_OFFSET_X, new Integer[] { - 100, 0 });
+                int startRecordDotOffsetX = location[0] + recordDot.getMeasuredWidth() / 2 - recordDotX;
+                int startRecordDotOffsetY = location[1] + recordDot.getMeasuredHeight() / 2 - startOverlayLocation[1] - startY - recordDotY;
+                if (globalAnimation.isVideo()) {
+                    startRecordDotOffsetX -= AndroidUtilities.dp(12);
+                    startRecordDotOffsetY -= AndroidUtilities.dp(12);
+                }
+                parameters.put(BUBBLE_RECORD_DOT_OFFSET_X, new Integer[] { startRecordDotOffsetX, 0});
+                parameters.put(BUBBLE_RECORD_DOT_OFFSET_Y, new Integer[] { startRecordDotOffsetY, 0});
+                parameters.put(BUBBLE_RECORD_DOT_RADIUS, new Integer[] { AndroidUtilities.dp(5), AndroidUtilities.dp(3) });
+                parameters.put(BUBBLE_RECORD_TIME_OFFSET_X, new Integer[] { - 100, 0 });
                 ChatActivityEnterView.TimerView timerView = enterView.getRecordTimerView();
                 timerView.getLocationOnScreen(location);
-                parameters.put(BUBBLE_VOICE_TIME_OFFSET_X, new Integer[] { location[0] - audioTimeX, 0 });
-                parameters.put(BUBBLE_VOICE_TIME_OFFSET_Y, new Integer[] { location[1] - startOverlayLocation[1] + timerView.getMeasuredHeight() / 2 - startY - audioTimeY - AndroidUtilities.dp(6.5f), 0 });
-                parameters.put(BUBBLE_VOICE_WAVEFORM_ALPHA, new Integer[] { 0, 1 });
-                voiceTransitionInPorgress = true;
+                parameters.put(BUBBLE_RECORD_TIME_OFFSET_X, new Integer[] { location[0] - audioTimeX, 0 });
+                parameters.put(BUBBLE_RECORD_TIME_OFFSET_Y, new Integer[] { location[1] - startOverlayLocation[1] + timerView.getMeasuredHeight() / 2 - startY - audioTimeY - AndroidUtilities.dp(6.5f), 0 });
             }
 
             // text
@@ -278,9 +287,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             int startBackgroundColor = Theme.getColor(Theme.key_windowBackgroundWhite);
             parameters.put(COLOR_BACKGROUND, new Integer[] { startBackgroundColor, Theme.getColor(Theme.key_chat_outBubble) });
             backgroundPaint.setColor(startBackgroundColor);
-            if (globalAnimation.isVoice()) {
-                parameters.put(COLOR_VOICE_DOT, new Integer[] { Theme.getColor(Theme.key_chat_recordedVoiceDot), Theme.getColor(Theme.key_chat_outVoiceSeekbarFill) });
-                parameters.put(COLOR_DURATION, new Integer[] { Theme.getColor(Theme.key_chat_recordTime), Theme.getColor(Theme.key_chat_outTimeText) });
+            if (globalAnimation.isVoice() || globalAnimation.isVideo()) {
+                parameters.put(COLOR_RECORD_DOT, new Integer[] { Theme.getColor(Theme.key_chat_recordedVoiceDot), Theme.getColor(globalAnimation.isVideo() ? Theme.key_chat_outVoiceSeekbarFill : Theme.key_chat_serviceText) });
+                parameters.put(COLOR_RECORD_DURATION, new Integer[] { Theme.getColor(Theme.key_chat_recordTime), Theme.getColor(Theme.key_chat_outTimeText) });
             }
 
             // reply
@@ -354,18 +363,22 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
                 // bubble
                 Interpolator bubbleInterpolator = ((DefaultAnimation) globalAnimation).getBubbleShapeInterpolator();
                 float bubbleInterpolation = bubbleInterpolator.getInterpolation(ratio);
-                backgroundWidth = (int) lerpInt(BUBBLE_BACKGROUND_WIDTH, bubbleInterpolation);
-                backgroundDrawableRightOffset = (int) lerpInt(BUBBLE_BACKGROUND_RIGHT_OFFSET, bubbleInterpolation);
-                additionalOffsetX = backgroundWidth - (int) parameters.get(BUBBLE_BACKGROUND_WIDTH)[0] + (int) parameters.get(BUBBLE_BACKGROUND_RIGHT_OFFSET)[0];
-                if (globalAnimation.isVoice()) {
-                    additionalOffsetBottom = (int) lerpInt(BUBBLE_BACKGROUND_BOTTOM_OFFSET, bubbleInterpolation);
-                    additionalOffsetY -= (int) parameters.get(BUBBLE_BACKGROUND_BOTTOM_OFFSET)[0] - additionalOffsetBottom;
-                    audioDotOffsetX = (int) lerpInt(BUBBLE_VOICE_DOT_OFFSET_X, bubbleInterpolation);
-                    audioDotOffsetY = (int) lerpInt(BUBBLE_VOICE_DOT_OFFSET_Y, bubbleInterpolation);
-                    audioDotRadius = lerpInt(BUBBLE_VOICE_DOT_OFFSET_RADIUS, bubbleInterpolation);
-                    audioTimeOffsetX = (int) lerpInt(BUBBLE_VOICE_TIME_OFFSET_X, bubbleInterpolation);
-                    audioTimeOffsetY = (int) lerpInt(BUBBLE_VOICE_TIME_OFFSET_Y, bubbleInterpolation);
-                    audioWaveformAlpha = lerpInt(BUBBLE_VOICE_WAVEFORM_ALPHA, bubbleInterpolation);
+                if (!globalAnimation.isVideo()) {
+                    backgroundWidth = (int) lerpInt(BUBBLE_BACKGROUND_WIDTH, bubbleInterpolation);
+                    backgroundDrawableRightOffset = (int) lerpInt(BUBBLE_BACKGROUND_RIGHT_OFFSET, bubbleInterpolation);
+                    additionalOffsetX = backgroundWidth - (int) parameters.get(BUBBLE_BACKGROUND_WIDTH)[0] + (int) parameters.get(BUBBLE_BACKGROUND_RIGHT_OFFSET)[0];
+                }
+                if (globalAnimation.isVoice() || globalAnimation.isVideo()) {
+                    if (globalAnimation.isVoice()) {
+                        additionalOffsetBottom = (int) lerpInt(BUBBLE_BACKGROUND_BOTTOM_OFFSET, bubbleInterpolation);
+                        additionalOffsetY -= (int) parameters.get(BUBBLE_BACKGROUND_BOTTOM_OFFSET)[0] - additionalOffsetBottom;
+                        audioWaveformAlpha = lerpInt(BUBBLE_VOICE_WAVEFORM_ALPHA, bubbleInterpolation);
+                    }
+                    recordDotOffsetX = (int) lerpInt(BUBBLE_RECORD_DOT_OFFSET_X, bubbleInterpolation);
+                    recordDotOffsetY = (int) lerpInt(BUBBLE_RECORD_DOT_OFFSET_Y, bubbleInterpolation);
+                    recordDotRadius = lerpInt(BUBBLE_RECORD_DOT_RADIUS, bubbleInterpolation);
+                    recordTimeOffsetX = (int) lerpInt(BUBBLE_RECORD_TIME_OFFSET_X, bubbleInterpolation);
+                    recordTimeOffsetY = (int) lerpInt(BUBBLE_RECORD_TIME_OFFSET_Y, bubbleInterpolation);
                 }
 
                 // text
@@ -382,9 +395,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
                 backgroundPaint.setColor(blendColor(COLOR_BACKGROUND, colorInterpolation));
                 replyNameColor = blendColor(REPLY_NAME_COLOR, colorInterpolation);
                 replyTextColor = blendColor(REPLY_TEXT_COLOR, colorInterpolation);
-                if (globalAnimation.isVoice()) {
-                    audioDotColor = blendColor(COLOR_VOICE_DOT, colorInterpolation);
-                    playingMessageDurationColor = blendColor(COLOR_DURATION, colorInterpolation);
+                if (globalAnimation.isVoice() || globalAnimation.isVideo()) {
+                    recordDotColor = blendColor(COLOR_RECORD_DOT, colorInterpolation);
+                    recordDurationColor = blendColor(COLOR_RECORD_DURATION, colorInterpolation);
                 }
 
                 // reply
@@ -422,7 +435,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             float animationOffsetX = additionalOffsetX + lerpInt(X, xInterpolation);
             if (globalAnimation.isImage()) {
                 currentPhotoCoords[0] += animationOffsetX;
-            } else {
+            } else if (globalAnimation.isText()) {
                 setAnimationOffsetX(animationOffsetX);
             }
 

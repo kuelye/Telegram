@@ -49,6 +49,7 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.URLSpan;
+import android.util.Log;
 import android.util.Property;
 import android.util.SparseArray;
 import android.util.StateSet;
@@ -141,9 +142,17 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return radialProgress;
     }
 
-    boolean voiceTransitionInPorgress;
+    boolean voiceTransitionInProgress;
+
     public void setVoiceTransitionInProgress(boolean b) {
-        voiceTransitionInPorgress = b;
+        voiceTransitionInProgress = b;
+        invalidate();
+    }
+
+    boolean videoTransitionInProgress;
+
+    public void setVideoTransitionInProgress(boolean b) {
+        videoTransitionInProgress = b;
         invalidate();
     }
 
@@ -358,10 +367,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     private boolean isSmallImage;
     private boolean drawImageButton;
-    private boolean drawVideoImageButton;
+    protected boolean drawVideoImageButton;
     private long lastLoadingSizeTotal;
     private boolean drawVideoSize;
-    private boolean canStreamVideo;
+    protected boolean canStreamVideo;
     private int animatingDrawVideoImageButton;
     private float animatingDrawVideoImageButtonProgress;
     private boolean animatingNoSoundPlaying;
@@ -791,18 +800,18 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     protected float replySystemAlphaFactor = 1;
     protected int backgroundDrawableRightOffset;
     protected int additionalOffsetBottom;
-    protected int audioDotX;
-    protected int audioDotY;
-    protected float audioDotRadius = AndroidUtilities.dp(3);
-    protected int audioDotOffsetX;
-    protected int audioDotOffsetY;
-    protected int audioDotColor = -1;
+    protected int recordDotX;
+    protected int recordDotY;
+    protected float recordDotRadius = AndroidUtilities.dp(3);
+    protected int recordDotOffsetX;
+    protected int recordDotOffsetY;
+    protected int recordDotColor = -1;
     protected int audioTimeX;
     protected int audioTimeY;
-    protected int audioTimeOffsetX;
-    protected int audioTimeOffsetY;
+    protected int recordTimeOffsetX;
+    protected int recordTimeOffsetY;
     protected float playingMessageDurationTextSize = -1;
-    protected int playingMessageDurationColor = -1;
+    protected int recordDurationColor = -1;
     protected float audioWaveformAlpha = 1;
 
     public ChatMessageCell(Context context) {
@@ -7438,17 +7447,19 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     Theme.chat_actionBackgroundPaint.setAlpha(oldAlpha);
 
                     if (!playing && currentMessageObject.isContentUnread()) {
-                        Theme.chat_docBackPaint.setColor(Theme.getColor(Theme.key_chat_serviceText));
+                        Theme.chat_docBackPaint.setColor(recordDotColor == -1 ? Theme.getColor(Theme.key_chat_serviceText) : recordDotColor);
                         Theme.chat_docBackPaint.setAlpha((int) (255 * timeAlpha));
-                        canvas.drawCircle(x1 + timeWidthAudio + AndroidUtilities.dp(12), y1 + AndroidUtilities.dp(8.3f), AndroidUtilities.dp(3), Theme.chat_docBackPaint);
+                        canvas.drawCircle((recordDotX = x1 + timeWidthAudio + AndroidUtilities.dp(12)) + recordDotOffsetX, (recordDotY = y1 + AndroidUtilities.dp(8.3f)) + recordDotOffsetY, recordDotRadius, Theme.chat_docBackPaint);
                     } else {
                         if (playing && !MediaController.getInstance().isMessagePaused()) {
                             roundVideoPlayingDrawable.start();
                         } else {
                             roundVideoPlayingDrawable.stop();
                         }
-                        setDrawableBounds(roundVideoPlayingDrawable, x1 + timeWidthAudio + AndroidUtilities.dp(6), y1 + AndroidUtilities.dp(2.3f));
-                        roundVideoPlayingDrawable.draw(canvas);
+                        if (!videoTransitionInProgress) {
+                            setDrawableBounds(roundVideoPlayingDrawable, x1 + timeWidthAudio + AndroidUtilities.dp(6), y1 + AndroidUtilities.dp(2.3f));
+                            roundVideoPlayingDrawable.draw(canvas);
+                        }
                     }
                     x1 += AndroidUtilities.dp(4);
                     y1 += AndroidUtilities.dp(1.7f);
@@ -7556,8 +7567,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 radialProgress.setProgressColor(Theme.getColor(isDrawSelectionBackground() || buttonPressed != 0 ? Theme.key_chat_inAudioSelectedProgress : Theme.key_chat_inAudioProgress));
             }
 
-            if (playingMessageDurationColor != -1) {
-                Theme.chat_audioTimePaint.setColor(playingMessageDurationColor);
+            if (recordDurationColor != -1) {
+                Theme.chat_audioTimePaint.setColor(recordDurationColor);
             }
             float savedTextSize = -1;
             if (playingMessageDurationTextSize != -1) {
@@ -7577,7 +7588,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 audioVisualizerDrawable.draw(canvas, buttonX + AndroidUtilities.dp(22), buttonY + AndroidUtilities.dp(22), currentMessageObject.isOutOwner());
             }
 
-            if (!voiceTransitionInPorgress) {
+            if (!voiceTransitionInProgress) {
                 radialProgress.setBackgroundDrawable(isDrawSelectionBackground() ? currentBackgroundSelectedDrawable : currentBackgroundDrawable);
                 radialProgress.draw(canvas);
             }
@@ -7601,13 +7612,13 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.restore();
 
             canvas.save();
-            canvas.translate((audioTimeX = timeAudioX) + audioTimeOffsetX, (audioTimeY = AndroidUtilities.dp(44) + namesOffset + mediaOffsetY) + audioTimeOffsetY);
+            canvas.translate((audioTimeX = timeAudioX) + recordTimeOffsetX, (audioTimeY = AndroidUtilities.dp(44) + namesOffset + mediaOffsetY) + recordTimeOffsetY);
             durationLayout.draw(canvas);
             canvas.restore();
 
             if (currentMessageObject.type != 0 && currentMessageObject.isContentUnread()) {
-                Theme.chat_docBackPaint.setColor(audioDotColor == -1 ? Theme.getColor(currentMessageObject.isOutOwner() ? Theme.key_chat_outVoiceSeekbarFill : Theme.key_chat_inVoiceSeekbarFill) : audioDotColor);
-                canvas.drawCircle((audioDotX = timeAudioX + timeWidthAudio + AndroidUtilities.dp(6)) + audioDotOffsetX, (audioDotY = AndroidUtilities.dp(51) + namesOffset + mediaOffsetY) + audioDotOffsetY, audioDotRadius, Theme.chat_docBackPaint);
+                Theme.chat_docBackPaint.setColor(recordDotColor == -1 ? Theme.getColor(currentMessageObject.isOutOwner() ? Theme.key_chat_outVoiceSeekbarFill : Theme.key_chat_inVoiceSeekbarFill) : recordDotColor);
+                canvas.drawCircle((recordDotX = timeAudioX + timeWidthAudio + AndroidUtilities.dp(6)) + recordDotOffsetX, (recordDotY = AndroidUtilities.dp(51) + namesOffset + mediaOffsetY) + recordDotOffsetY, recordDotRadius, Theme.chat_docBackPaint);
             }
 
             if (savedTextSize != -1) {

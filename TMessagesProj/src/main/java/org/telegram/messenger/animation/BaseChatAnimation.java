@@ -66,7 +66,7 @@ public abstract class BaseChatAnimation extends BaseAnimation {
     }
 
     public boolean isDefault() {
-        return getAnimationType() == AnimationType.SHORT_TEXT || getAnimationType() == AnimationType.LONG_TEXT || getAnimationType() == AnimationType.LINK || isVoice();
+        return getAnimationType() == AnimationType.SHORT_TEXT || getAnimationType() == AnimationType.LONG_TEXT || getAnimationType() == AnimationType.LINK || isVoice() || isVideo();
     }
 
     public boolean isText() {
@@ -91,5 +91,9 @@ public abstract class BaseChatAnimation extends BaseAnimation {
 
     public boolean isVoice() {
         return getAnimationType() == AnimationType.VOICE;
+    }
+
+    public boolean isVideo() {
+        return getAnimationType() == AnimationType.VIDEO;
     }
 }

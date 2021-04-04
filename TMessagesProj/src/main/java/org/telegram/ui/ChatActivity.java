@@ -21891,7 +21891,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 messageCell.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
                                     @Override
                                     public boolean onPreDraw() {
-
                                         PipRoundVideoView pipRoundVideoView = PipRoundVideoView.getInstance();
                                         if (pipRoundVideoView != null) {
                                             pipRoundVideoView.showTemporary(true);
@@ -21927,13 +21926,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                                 ObjectAnimator.ofInt(instantCameraView.getPaint(), AnimationProperties.PAINT_ALPHA, 0),
                                                 ObjectAnimator.ofFloat(instantCameraView.getMuteImageView(), View.ALPHA, 0.0f)
                                         );
+                                        BaseChatAnimation chatAnimation = (BaseChatAnimation) AnimationController.getAnimation(AnimationType.VIDEO);
                                         animatorSet.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
                                         ObjectAnimator o = ObjectAnimator.ofFloat(cameraContainer, View.TRANSLATION_X, position[0] - rect.x);
                                         o.setInterpolator(CubicBezierInterpolator.DEFAULT);
 
                                         allAnimators.playTogether(o, animatorSet);
                                         allAnimators.setStartDelay(120);
-                                        allAnimators.setDuration(180);
+                                        allAnimators.setDuration(chatAnimation.getDuration());
 
                                         allAnimators.addListener(new AnimatorListenerAdapter() {
                                             @Override
