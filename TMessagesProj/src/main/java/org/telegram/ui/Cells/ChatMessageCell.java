@@ -781,7 +781,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     protected Paint backgroundPaint = new Paint();
     protected OnDrawnListener onDrawnListener = null;
     protected boolean isDrawn = false;
-    protected float textSize = AndroidUtilities.dp(SharedConfig.fontSize);
+    protected float textSize = -1;
     protected float timeAlphaFactor = 1;
     protected float replyAnimationLineState = 1;
     protected float replyAnimationOffsetX;
@@ -9712,8 +9712,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             onLayout(false, getLeft(), getTop(), getRight(), getBottom());
         }
 
-        float savedTextSize = Theme.chat_msgTextPaint.getTextSize();
-        Theme.chat_msgTextPaint.setTextSize(textSize);
+        float savedTextSize = -1;
+        if (textSize != -1) {
+            savedTextSize = Theme.chat_msgTextPaint.getTextSize();
+            Theme.chat_msgTextPaint.setTextSize(textSize);
+        }
         if (currentMessageObject.isOutOwner()) {
             Theme.chat_msgTextPaint.setColor(Theme.getColor(Theme.key_chat_messageTextOut));
             Theme.chat_msgTextPaint.linkColor = Theme.getColor(Theme.key_chat_messageLinkOut);
@@ -10278,7 +10281,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             onDrawnListener.onDrawn();
         }
 
-        Theme.chat_msgTextPaint.setTextSize(savedTextSize);
+        if (savedTextSize != -1) {
+            Theme.chat_msgTextPaint.setTextSize(savedTextSize);
+        }
 
         // TODO [CONTEST]
         Paint textPaint = new Paint();
