@@ -58,10 +58,8 @@ public class TextSpinnerCell extends TextSettingsCell {
     }
 
     public void showPopup() {
-        // dismiss previous popup
         if (popupWindow != null) {
-            popupWindow.dismiss();
-            popupWindow = null;
+            return;
         }
 
         // popup layout

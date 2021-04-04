@@ -13,7 +13,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
-import androidx.core.graphics.ColorUtils;
 import androidx.core.view.GravityCompat;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -37,9 +36,9 @@ public class TextColorPickerCell extends TextSettingsCell {
 
     private OnColorAppliedListener onColorAppliedListener;
 
-    private boolean isChanging;
-    private float changingAlpha;
-    private ValueAnimator changingAnimator;
+    private boolean isPickerShown;
+    private float changingOverlayAlpha;
+    private ValueAnimator changingOverlayAnimator;
 
     public TextColorPickerCell(Context context) {
         super(context);
@@ -52,9 +51,9 @@ public class TextColorPickerCell extends TextSettingsCell {
         fillPaint.setColor(color);
         rect.set(valueTextView.getLeft() - dp(8), valueTextView.getTop() + dp(8), valueTextView.getRight() + dp(8), valueTextView.getBottom() - dp(8));
         canvas.drawRoundRect(rect, dp(8), dp(8), fillPaint);
-        if (changingAlpha > 0) {
+        if (changingOverlayAlpha > 0) {
             fillPaint.setColor(Color.BLACK);
-            fillPaint.setAlpha((int) (100 * changingAlpha));
+            fillPaint.setAlpha((int) (100 * changingOverlayAlpha));
             int d = (int) valueTextView.getPaint().measureText("#");
             rect.set(valueTextView.getLeft() + d - dp(1), valueTextView.getTop() + dp(15), valueTextView.getRight() + dp(1), valueTextView.getBottom() - dp(15));
             canvas.drawRoundRect(rect, dp(3), dp(3), fillPaint);
@@ -72,8 +71,8 @@ public class TextColorPickerCell extends TextSettingsCell {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if (changingAnimator != null) {
-            changingAnimator.cancel();
+        if (changingOverlayAnimator != null) {
+            changingOverlayAnimator.cancel();
         }
     }
 
@@ -97,29 +96,33 @@ public class TextColorPickerCell extends TextSettingsCell {
         onColorAppliedListener = listener;
     }
 
-    public void setChanging(boolean changing) {
-        if (this.isChanging == changing) {
+    public void setPickerShown(boolean pickerShown) {
+        if (this.isPickerShown == pickerShown) {
             return;
         }
 
-        this.isChanging = changing;
-        if (changingAnimator != null) {
-            changingAnimator.cancel();
-            changingAnimator = null;
+        this.isPickerShown = pickerShown;
+        if (changingOverlayAnimator != null) {
+            changingOverlayAnimator.cancel();
+            changingOverlayAnimator = null;
         }
 
-        float startChangingAlpha = changingAlpha;
-        float endChangingAlpha = changing ? 1 : 0;
-        changingAnimator = ValueAnimator.ofFloat(startChangingAlpha, endChangingAlpha);
-        changingAnimator.setDuration(500);
-        changingAnimator.addUpdateListener(animation -> {
-            changingAlpha = (float) animation.getAnimatedValue();
+        float startChangingAlpha = changingOverlayAlpha;
+        float endChangingAlpha = pickerShown ? 1 : 0;
+        changingOverlayAnimator = ValueAnimator.ofFloat(startChangingAlpha, endChangingAlpha);
+        changingOverlayAnimator.setDuration(500);
+        changingOverlayAnimator.addUpdateListener(animation -> {
+            changingOverlayAlpha = (float) animation.getAnimatedValue();
             invalidate();
         });
-        changingAnimator.start();;
+        changingOverlayAnimator.start();;
     }
 
     public void showPicker() {
+        if (isPickerShown) {
+            return;
+        }
+
         BottomSheet.Builder builder = new BottomSheet.Builder(getContext());
         builder.setApplyTopPadding(false);
         builder.setApplyBottomPadding(false);
@@ -127,7 +130,7 @@ public class TextColorPickerCell extends TextSettingsCell {
         RelativeLayout container = new RelativeLayout(getContext());
         builder.setCustomView(container);
         BottomSheet bottomSheet = builder.create();
-        bottomSheet.setOnDismissListener(dialog -> setChanging(false));
+        bottomSheet.setOnDismissListener(dialog -> setPickerShown(false));
 
         // color pickers
         ColorPicker colorPicker = new ColorPicker(getContext(), false, (color, num, applyNow) -> {}) {
@@ -153,15 +156,15 @@ public class TextColorPickerCell extends TextSettingsCell {
         container.addView(buttonsLayout);
         buttonsLayout.addView(createButton(LocaleController.getString("Cancel", R.string.Cancel), GravityCompat.START, v -> {
             bottomSheet.dismiss();
-            setChanging(false);
+            setPickerShown(false);
         }));
         buttonsLayout.addView(createButton(LocaleController.getString("ApplyTheme", R.string.ApplyTheme), GravityCompat.END, v -> {
-            setChanging(false);
+            setPickerShown(false);
             setColor(colorPicker.getColor(), true);
             bottomSheet.dismiss();
         }));
 
-        setChanging(true);
+        setPickerShown(true);
         bottomSheet.show();
     }
 
