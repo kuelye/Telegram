@@ -144,6 +144,7 @@ android {
         }
 
         release {
+            applicationIdSuffix ".kuelye"
             debuggable false
             jniDebuggable false
             signingConfig signingConfigs.release
