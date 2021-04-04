@@ -1,5 +1,6 @@
 package org.telegram.ui.Editor;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.DashPathEffect;
@@ -10,6 +11,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.text.TextPaint;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
@@ -40,6 +42,7 @@ public class AnimationInterpolatorCell extends FrameLayout {
     private final Rect rect = new Rect();
     private final RectF rectF = new RectF();
     private final Path path = new Path();
+    private final String[] texts = new String[2];
 
     private final Drawable circleDrawable;
     private final Paint strokePaint;
@@ -58,6 +61,9 @@ public class AnimationInterpolatorCell extends FrameLayout {
     private int duration;
 
     private OnInterpolatorChangedListener onInterpolatorChangedListener;
+
+    private int timeLabelDeltaY = 0;
+    private ValueAnimator timeLabelsAnimator;
 
     public AnimationInterpolatorCell(@NonNull Context context) {
         super(context);
@@ -135,12 +141,20 @@ public class AnimationInterpolatorCell extends FrameLayout {
             drawControlPointer(canvas, p.x, p.y);
         }
 
+        float w = TIME_POINTER_RX * 2 + TEXT_PADDING * 2;
         for (int i = 0; i < 2; ++i) {
-            String text = LocaleController.formatString("AnimationDurationTemplate", R.string.AnimationDurationTemplate, (int) (ts[i] * duration));
+            texts[i] = LocaleController.formatString("AnimationDurationTemplate", R.string.AnimationDurationTemplate, (int) (ts[i] * duration));
+            w += textPaint.measureText(texts[i]);
+        }
+        w -= tps[1].x - tps[0].x;
+        timeLabelDeltaY = w > 0 ? (int) ((textPaint.getTextSize() / 2) * Math.min(1, w / (TEXT_PADDING * 2))) : 0;
+
+        for (int i = 0; i < 2; ++i) {
+            String text = texts[i];
             textPaint.getTextBounds(text, 0, text.length(), rect);
-            x = tps[i].x + (i == 0 && ts[i] < 0.25 || i == 1 && ts[i] < 0.75 ? TIME_POINTER_RX + TEXT_PADDING : - TIME_POINTER_RX - TEXT_PADDING - rect.width());
+            x = tps[i].x + (i == 0 ? TIME_POINTER_RX + TEXT_PADDING : - TIME_POINTER_RX - TEXT_PADDING - rect.width());
             textPaint.setColor(0xFFFFCD00);
-            canvas.drawText(text, x, tps[i].y + (float) rect.height() / 2, textPaint);
+            canvas.drawText(text, x, tps[i].y + (float) rect.height() / 2 + (i == 1 ? timeLabelDeltaY : -timeLabelDeltaY), textPaint);
             text = (int) Math.round(cs[i] * 100) + "%";
             textPaint.getTextBounds(text, 0, text.length(), rect);
             Point p = cps[i * 2 + 1];
@@ -155,13 +169,13 @@ public class AnimationInterpolatorCell extends FrameLayout {
     public boolean onInterceptTouchEvent(MotionEvent event) {
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
             dragType = null;
-            if (Math.abs(event.getY() - cps[1].y) < START_DRAG_DISTANCE) {
+            if (Math.abs(event.getY() - cps[1].y) < START_DRAG_DISTANCE && event.getX() > tps[0].x - START_DRAG_DISTANCE && event.getX() < tps[1].x + START_DRAG_DISTANCE) {
                 dragType = DragType.CONTROL_0;
-            } else if (Math.abs(event.getY() - cps[3].y) < START_DRAG_DISTANCE) {
+            } else if (Math.abs(event.getY() - cps[3].y) < START_DRAG_DISTANCE && event.getX() > tps[0].x - START_DRAG_DISTANCE && event.getX() < tps[1].x + START_DRAG_DISTANCE) {
                 dragType = DragType.CONTROL_1;
-            } else if (event.getX() < tps[0].x + START_DRAG_DISTANCE) {
+            } else if (Math.abs(event.getX() - tps[0].x) < START_DRAG_DISTANCE) {
                 dragType = DragType.TIME_0;
-            } else if (event.getX() > tps[1].x - START_DRAG_DISTANCE) {
+            } else if (Math.abs(event.getX() - tps[1].x) < START_DRAG_DISTANCE) {
                 dragType = DragType.TIME_1;
             }
             if (dragType != null) {
@@ -178,10 +192,10 @@ public class AnimationInterpolatorCell extends FrameLayout {
             if (dragType != null) {
                 switch (dragType) {
                     case TIME_0:
-                        ts[0] = MathUtils.clamp((event.getX() - HORIZONTAL_PADDING) / (getMeasuredWidth() - HORIZONTAL_PADDING * 2), 0, ts[1]);
+                        ts[0] = MathUtils.clamp((event.getX() - HORIZONTAL_PADDING) / (getMeasuredWidth() - HORIZONTAL_PADDING * 2), 0, ts[1] - 0.1f);
                         break;
                     case TIME_1:
-                        ts[1] = MathUtils.clamp((event.getX() - HORIZONTAL_PADDING) / (getMeasuredWidth() - HORIZONTAL_PADDING * 2), ts[0], 1);
+                        ts[1] = MathUtils.clamp((event.getX() - HORIZONTAL_PADDING) / (getMeasuredWidth() - HORIZONTAL_PADDING * 2), ts[0] + 0.1f, 1);
                         break;
                     case CONTROL_0:
                         cs[0] = MathUtils.clamp((event.getX() - tps[0].x) / (tps[1].x - tps[0].x), 0, 1);

@@ -304,7 +304,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
     }
 
     private void recalculateBitmap() {
-        frame = generateBitmap();
+//        frame = generateBitmap();
         if (frame != null) {
             frameMatrix.setScale((float) getWidth() / frame.getWidth(), (float) getHeight() / frame.getHeight());
         }

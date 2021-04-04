@@ -43,7 +43,7 @@ public class AnimationController {
 
         String savedAnimations = MessagesController.getGlobalMainSettings().getString("animations", null);
         if (savedAnimations == null) {
-            restoreToDefault();
+            restoreToDefaultInternal();
         } else {
             try {
                 JSONObject jsonObject = new JSONObject(savedAnimations);
@@ -85,8 +85,8 @@ public class AnimationController {
     public static void emitAnimationChange(AnimationType animationType) {
         List<OnAnimationChangedListener> listeners;
         if (animationType == null) {
-            for (AnimationType iType : getInstance().listeners.keySet()) {
-                listeners = getInstance().listeners.get(iType);
+            for (AnimationType type : getInstance().listeners.keySet()) {
+                listeners = getInstance().listeners.get(type);
                 if (listeners != null) {
                     for (OnAnimationChangedListener listener : listeners) {
                         listener.onAnimationChanged(animationType);
@@ -111,10 +111,7 @@ public class AnimationController {
     }
 
     public static void restoreToDefault() {
-        for (BaseAnimation animation : getInstance().animations.values()) {
-            animation.restoreToDefault();
-        }
-        emitAnimationChange(null);
+        getInstance().restoreToDefaultInternal();
     }
 
     private JSONObject toJson() {
@@ -128,6 +125,13 @@ public class AnimationController {
             FileLog.e(e);
         }
         return null;
+    }
+
+    private void restoreToDefaultInternal() {
+        for (BaseAnimation animation : getInstance().animations.values()) {
+            animation.restoreToDefault();
+        }
+        emitAnimationChange(null);
     }
 
     public interface OnAnimationChangedListener {
