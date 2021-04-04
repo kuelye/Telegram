@@ -204,6 +204,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         enterHeightDelta += delegate.getChatActivityEnterView().getMeasuredHeight() - editText.getHeight() - AndroidUtilities.dp(4); // height of blocks above edit
         int endHeight = realCell.getMeasuredHeight();
         startY -= enterHeightDelta;
+        Log.v("GUB", "enterHeightDelta=" + enterHeightDelta);
 
         // time
         Interpolator timeInterpolator = globalAnimation.getTimeAppearsInterpolator();
@@ -254,7 +255,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             if (startStickerRect == null) {
                 startCoords = new Integer[] { startEditLocation[0], (int) (editText.getBaseline() - size + fontMetrics.descent + AndroidUtilities.dp(1)), size, size };
             } else {
-                startCoords = new Integer[] { startStickerRect.left, startStickerRect.top - startY - startOverlayLocation[1], startStickerRect.width(), startStickerRect.height() };
+                startCoords = new Integer[] { startStickerRect.left, startStickerRect.top - startY - startOverlayLocation[1] - enterHeightDelta, startStickerRect.width(), startStickerRect.height() };
             }
             Integer[] endCoords = new Integer[] { (int) getPhotoImage().getImageX(), (int) getPhotoImage().getImageY(), (int) getPhotoImage().getImageWidth(), (int) getPhotoImage().getImageHeight() };
             parameters.put(EMOJI_PHOTO_COORDS, new Integer[][] { startCoords, endCoords });
@@ -334,7 +335,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
                 additionalOffsetX = (int) (((Integer[][]) parameters.get(EMOJI_PHOTO_COORDS))[0][0] - currentPhotoCoords[0]);
 
                 // y
-                if (startStickerRect != null) {
+                if (startStickerRect == null) {
                     additionalOffsetY = (int) (((Integer[][]) parameters.get(EMOJI_PHOTO_COORDS))[0][3] - currentPhotoCoords[3]);
                 }
 
@@ -345,7 +346,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             // x
             float xInterpolation = xInterpolator.getInterpolation(ratio);
             float animationOffsetX = additionalOffsetX + lerpInt(X, xInterpolation);
-//            setAnimationOffsetX(animationOffsetX);
+            setAnimationOffsetX(animationOffsetX);
 
             // y
             if (!isCorrectionAnimationStarted) {

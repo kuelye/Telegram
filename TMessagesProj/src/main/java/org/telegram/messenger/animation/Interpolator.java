@@ -67,8 +67,16 @@ public class Interpolator {
             if (!skipDuration) {
                 jsonObject.put("d", duration);
             }
-            jsonObject.put("c", new JSONArray(cs));
-            jsonObject.put("t", new JSONArray(ts));
+            JSONArray jsonCs = new JSONArray();
+            for (int i = 0; i < 2; ++ i) {
+                jsonCs.put(i, cs[i]);
+            }
+            jsonObject.put("c", jsonCs);
+            JSONArray jsonTs = new JSONArray();
+            for (int i = 0; i < 4; ++ i) {
+                jsonTs.put(i, ts[i]);
+            }
+            jsonObject.put("t", jsonTs);
             return jsonObject;
         } catch (JSONException e) {
             FileLog.e(e);

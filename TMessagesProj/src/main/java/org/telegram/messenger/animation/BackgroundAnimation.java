@@ -42,7 +42,11 @@ public class BackgroundAnimation extends BaseAnimation {
     JSONObject toJson() {
         try {
             JSONObject jsonObject = super.toJson(false);
-            jsonObject.put("colors", new JSONArray(colors));
+            JSONArray jsonColors = new JSONArray();
+            for (int i = 0; i < 4; ++ i) {
+                jsonColors.put(i, colors[i]);
+            }
+            jsonObject.put("colors", jsonColors);
             return jsonObject;
         } catch (JSONException e) {
             FileLog.e(e);

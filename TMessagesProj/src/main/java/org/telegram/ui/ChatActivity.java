@@ -6011,9 +6011,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             @Override
             public void onStickerSend(View view, TLRPC.Document sticker) {
-                int[] location = new int[2];
-                view.getLocationOnScreen(location);
-                stickerPositions.put(sticker.id, new Rect(location[0], location[1], location[0] + view.getMeasuredWidth(), location[1] + view.getMeasuredHeight()));
+                if (view != null) {
+                    int[] location = new int[2];
+                    view.getLocationOnScreen(location);
+                    stickerPositions.put(sticker.id, new Rect(location[0], location[1], location[0] + view.getMeasuredWidth(), location[1] + view.getMeasuredHeight()));
+                }
             }
 
             @Override
@@ -23110,6 +23112,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (getParentActivity() == null) {
             return;
         }
+
+        animatedMessagesOverlay.bringToFront();
 
         animateBackground(BackgroundAnimation.SEND_MESSAGE_INTERPOLATOR_ID);
 
