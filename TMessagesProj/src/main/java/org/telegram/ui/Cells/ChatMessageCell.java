@@ -10299,11 +10299,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
 
         // TODO [CONTEST]
-        Paint textPaint = new Paint();
-        textPaint.setColor(Color.RED);
-        textPaint.setStyle(Paint.Style.STROKE);
-        textPaint.setStrokeWidth(2);
-        canvas.drawRect(1, 1, getWidth() - 2, getHeight() - 2, textPaint);
+//        Paint textPaint = new Paint();
+//        textPaint.setColor(Color.RED);
+//        textPaint.setStyle(Paint.Style.STROKE);
+//        textPaint.setStrokeWidth(2);
+//        canvas.drawRect(1, 1, getWidth() - 2, getHeight() - 2, textPaint);
 //        canvas.drawLine(0, 1, getWidth(), 1, textPaint);
 //        int y = replyStartY;  // getBottomBaseline();
 //        canvas.drawLine(0, y, getWidth(), y, textPaint);
