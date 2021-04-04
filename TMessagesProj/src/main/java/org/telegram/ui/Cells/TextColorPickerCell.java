@@ -1,5 +1,6 @@
 package org.telegram.ui.Cells;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,6 +13,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
+import androidx.core.graphics.ColorUtils;
 import androidx.core.view.GravityCompat;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -35,6 +37,10 @@ public class TextColorPickerCell extends TextSettingsCell {
 
     private OnColorAppliedListener onColorAppliedListener;
 
+    private boolean isChanging;
+    private float changingAlpha;
+    private ValueAnimator changingAnimator;
+
     public TextColorPickerCell(Context context) {
         super(context);
         setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
@@ -43,9 +49,17 @@ public class TextColorPickerCell extends TextSettingsCell {
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
-        rect.set(valueTextView.getLeft() - dp(8), valueTextView.getTop() + dp(8), valueTextView.getRight() + dp(8), valueTextView.getBottom() - dp(8));
         fillPaint.setColor(color);
+        rect.set(valueTextView.getLeft() - dp(8), valueTextView.getTop() + dp(8), valueTextView.getRight() + dp(8), valueTextView.getBottom() - dp(8));
         canvas.drawRoundRect(rect, dp(8), dp(8), fillPaint);
+        if (changingAlpha > 0) {
+            fillPaint.setColor(Color.BLACK);
+            fillPaint.setAlpha((int) (100 * changingAlpha));
+            int d = (int) valueTextView.getPaint().measureText("#");
+            rect.set(valueTextView.getLeft() + d - dp(1), valueTextView.getTop() + dp(15), valueTextView.getRight() + dp(1), valueTextView.getBottom() - dp(15));
+            canvas.drawRoundRect(rect, dp(3), dp(3), fillPaint);
+            fillPaint.setAlpha(255);
+        }
         super.dispatchDraw(canvas);
     }
 
@@ -53,6 +67,12 @@ public class TextColorPickerCell extends TextSettingsCell {
     public void setText(String text, boolean divider) {
         super.setText(text, divider);
         updateColor();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        changingAnimator.cancel();
     }
 
     public int getColor() {
@@ -75,6 +95,28 @@ public class TextColorPickerCell extends TextSettingsCell {
         onColorAppliedListener = listener;
     }
 
+    public void setChanging(boolean changing) {
+        if (this.isChanging == changing) {
+            return;
+        }
+
+        this.isChanging = changing;
+        if (changingAnimator != null) {
+            changingAnimator.cancel();
+            changingAnimator = null;
+        }
+
+        float startChangingAlpha = changingAlpha;
+        float endChangingAlpha = changing ? 1 : 0;
+        changingAnimator = ValueAnimator.ofFloat(startChangingAlpha, endChangingAlpha);
+        changingAnimator.setDuration(500);
+        changingAnimator.addUpdateListener(animation -> {
+            changingAlpha = (float) animation.getAnimatedValue();
+            invalidate();
+        });
+        changingAnimator.start();;
+    }
+
     public void showPicker() {
         BottomSheet.Builder builder = new BottomSheet.Builder(getContext());
         builder.setApplyTopPadding(false);
@@ -83,6 +125,7 @@ public class TextColorPickerCell extends TextSettingsCell {
         RelativeLayout container = new RelativeLayout(getContext());
         builder.setCustomView(container);
         BottomSheet bottomSheet = builder.create();
+        bottomSheet.setOnDismissListener(dialog -> setChanging(false));
 
         // color pickers
         ColorPicker colorPicker = new ColorPicker(getContext(), false, (color, num, applyNow) -> {}) {
@@ -106,11 +149,17 @@ public class TextColorPickerCell extends TextSettingsCell {
         buttonsLayout.setBackgroundColor(Theme.getColor(Theme.key_dialogBackground));
         buttonsLayout.setLayoutParams(LayoutHelper.createRelative(LayoutHelper.MATCH_PARENT, 60, RelativeLayout.BELOW, android.R.id.content));
         container.addView(buttonsLayout);
-        buttonsLayout.addView(createButton(LocaleController.getString("Cancel", R.string.Cancel), GravityCompat.START, v -> bottomSheet.dismiss()));
+        buttonsLayout.addView(createButton(LocaleController.getString("Cancel", R.string.Cancel), GravityCompat.START, v -> {
+            bottomSheet.dismiss();
+            setChanging(false);
+        }));
         buttonsLayout.addView(createButton(LocaleController.getString("ApplyTheme", R.string.ApplyTheme), GravityCompat.END, v -> {
+            setChanging(false);
             setColor(colorPicker.getColor(), true);
             bottomSheet.dismiss();
         }));
+
+        setChanging(true);
         bottomSheet.show();
     }
 
