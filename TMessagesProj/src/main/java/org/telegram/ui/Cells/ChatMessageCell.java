@@ -9712,6 +9712,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             onLayout(false, getLeft(), getTop(), getRight(), getBottom());
         }
 
+        float savedTextSize = Theme.chat_msgTextPaint.getTextSize();
         Theme.chat_msgTextPaint.setTextSize(textSize);
         if (currentMessageObject.isOutOwner()) {
             Theme.chat_msgTextPaint.setColor(Theme.getColor(Theme.key_chat_messageTextOut));
@@ -10276,6 +10277,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (onDrawnListener != null) {
             onDrawnListener.onDrawn();
         }
+
+        Theme.chat_msgTextPaint.setTextSize(savedTextSize);
 
         // TODO [CONTEST]
         Paint textPaint = new Paint();
