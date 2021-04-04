@@ -243,9 +243,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             }
 
             // bubble
-            int backgroundDrawableRightOffset = backgroundWidth - backgroundDrawableRight + AndroidUtilities.dp(4);
+            int backgroundDrawableRightOffset = backgroundWidth - backgroundDrawableRight + AndroidUtilities.dp(2);
             parameters.put(BUBBLE_BACKGROUND_WIDTH, new Integer[] {
-                realCell.backgroundWidth - startEditLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(4) + getExtraTextX() + backgroundDrawableRightOffset,
+                realCell.backgroundWidth - startEditLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(9) + getExtraTextX() + backgroundDrawableRightOffset,
                 realCell.backgroundWidth
             });
             parameters.put(BUBBLE_BACKGROUND_RIGHT_OFFSET, new Integer[] { backgroundDrawableRightOffset, 0 });
@@ -288,7 +288,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             parameters.put(COLOR_BACKGROUND, new Integer[] { startBackgroundColor, Theme.getColor(Theme.key_chat_outBubble) });
             backgroundPaint.setColor(startBackgroundColor);
             if (globalAnimation.isVoice() || globalAnimation.isVideo()) {
-                parameters.put(COLOR_RECORD_DOT, new Integer[] { Theme.getColor(Theme.key_chat_recordedVoiceDot), Theme.getColor(globalAnimation.isVideo() ? Theme.key_chat_outVoiceSeekbarFill : Theme.key_chat_serviceText) });
+                parameters.put(COLOR_RECORD_DOT, new Integer[] { Theme.getColor(Theme.key_chat_recordedVoiceDot), Theme.getColor(globalAnimation.isVideo() ? Theme.key_chat_serviceText : Theme.key_chat_outVoiceSeekbarFill) });
                 parameters.put(COLOR_RECORD_DURATION, new Integer[] { Theme.getColor(Theme.key_chat_recordTime), Theme.getColor(Theme.key_chat_outTimeText) });
             }
 
@@ -436,7 +436,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             if (globalAnimation.isImage()) {
                 currentPhotoCoords[0] += animationOffsetX;
             } else if (globalAnimation.isText()) {
-                setAnimationOffsetX(animationOffsetX);
+                setAnimationOffsetX(animationOffsetX - AndroidUtilities.dp(2));
             }
 
             // y
