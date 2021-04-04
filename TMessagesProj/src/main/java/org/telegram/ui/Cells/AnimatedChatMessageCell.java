@@ -241,9 +241,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             }
 
             // bubble
-            int backgroundDrawableRightOffset = backgroundWidth - backgroundDrawableRight + AndroidUtilities.dp(2);
+            int backgroundDrawableRightOffset = backgroundWidth - backgroundDrawableRight + AndroidUtilities.dp(4);
             parameters.put(BUBBLE_BACKGROUND_WIDTH, new Integer[] {
-                realCell.backgroundWidth - startEditLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(11) + getExtraTextX() + backgroundDrawableRightOffset,
+                realCell.backgroundWidth - startEditLocation[0] + backgroundDrawableLeft + AndroidUtilities.dp(4) + getExtraTextX() + backgroundDrawableRightOffset,
                 realCell.backgroundWidth
             });
             parameters.put(BUBBLE_BACKGROUND_RIGHT_OFFSET, new Integer[] { backgroundDrawableRightOffset, 0 });
@@ -322,12 +322,12 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
         // reply
         parameters.put(REPLY_OFFSET_X, new Integer[] { startReplyX, 0 });
+        parameters.put(REPLY_OFFSET_Y, new Integer[] { -AndroidUtilities.dp(6), 0 });
 
         // ANIMATION
         animator = ValueAnimator.ofFloat(0, 1);
         animator.setDuration(duration);
         animator.addUpdateListener(animation -> {
-            boolean needRequestLayout = false;
             float ratio = (float) animation.getAnimatedValue();
             int additionalOffsetY = 0;
 
@@ -422,6 +422,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
             // reply
             replyAnimationOffsetX = lerpInt(REPLY_OFFSET_X, replyInterpolation);
+            replyAnimationOffsetY = lerpInt(REPLY_OFFSET_Y, replyInterpolation);
             if (globalAnimation.isImage()) {
                 replyAnimationOffsetX -= animationOffsetX;
             }

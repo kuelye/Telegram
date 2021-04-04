@@ -10237,6 +10237,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         }
         replyStartX += replyAnimationOffsetX;
+        replyStartY += replyAnimationOffsetY;
         if (currentPosition == null && !transitionParams.animateBackgroundBoundsInner) {
             drawNamesLayout(canvas, 1f);
         }
