@@ -12705,10 +12705,10 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
         private ArrayList<ItemAnimatorFinishedListener> mFinishedListeners =
                 new ArrayList<ItemAnimatorFinishedListener>();
 
-        private long mAddDuration = 3000; // TODO [CONTEST]
-        private long mRemoveDuration = 3000;
-        private long mMoveDuration = 3000;
-        private long mChangeDuration = 3000;
+        private long mAddDuration = 120;
+        private long mRemoveDuration = 120;
+        private long mMoveDuration = 250;
+        private long mChangeDuration = 250;
 
         /**
          * Gets the current duration for which all move animations will run.
