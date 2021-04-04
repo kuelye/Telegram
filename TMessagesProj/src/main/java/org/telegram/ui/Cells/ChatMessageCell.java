@@ -9691,6 +9691,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
+    protected void updateAlpha() {
+        setAlpha(isHiddenBecauseAnimated ? 0 : 1);
+    }
+
     @SuppressLint("WrongCall")
     @Override
     protected void onDraw(Canvas canvas) {
@@ -9698,7 +9702,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return;
         }
 
-        setAlpha(isHiddenBecauseAnimated ? 0 : 1);
+        updateAlpha();
 
         if (!wasLayout && !animationRunning) {
             forceLayout();

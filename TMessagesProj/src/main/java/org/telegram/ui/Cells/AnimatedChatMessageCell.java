@@ -72,6 +72,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private boolean isRealCellLayoutDone = false;
     private boolean isAnimationCorrected = true;
     private boolean isAnimationStarted = true;
+    private boolean isAnimationAtLeastOneTick = false;
     private boolean isAnimationFinished = false;
     private boolean isCorrectionAnimationStarted = false;
     private boolean isCorrectionAnimationFinished = false;
@@ -112,6 +113,11 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         }
         super.onDraw(canvas);
         checkAnimationStart();
+    }
+
+    @Override
+    protected void updateAlpha() {
+        setAlpha(isAnimationAtLeastOneTick ? 1 : 0);
     }
 
     public void setRealCell(ChatMessageCell cell) {
@@ -215,7 +221,6 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         enterHeightDelta += delegate.getChatActivityEnterView().getMeasuredHeight() - editText.getHeight() - AndroidUtilities.dp(4); // height of blocks above edit
         int endHeight = realCell.getMeasuredHeight();
         startY -= enterHeightDelta;
-        Log.v("GUB", "enterHeightDelta=" + enterHeightDelta);
 
         // time
         Interpolator timeInterpolator = globalAnimation.getTimeAppearsInterpolator();
@@ -310,10 +315,10 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             startReplyX = (int) (startCoords[0] - forwardNameX); // startCords used instead of textX cause we have no text for emoji message
         }
 
-        // finishing
+        // finishing x & y
         parameters.put(X, new Integer[] { startX, endX });
         parameters.put(Y, new Integer[] { startY, endY });
-        setY((Integer) parameters.get(Y)[0]);
+        setY(startY);
 
         // reply
         parameters.put(REPLY_OFFSET_X, new Integer[] { startReplyX, 0 });
@@ -422,6 +427,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             }
             replyAnimationLineState = replyInterpolation;
 
+            isAnimationAtLeastOneTick = true;
             invalidate();
         });
         animator.addListener(new Animator.AnimatorListener() {
