@@ -75,7 +75,7 @@ import androidx.recyclerview.widget.RecyclerView;
 public class StickersAlert extends BottomSheet implements NotificationCenter.NotificationCenterDelegate {
 
     public interface StickersAlertDelegate {
-        void onStickerSelected(TLRPC.Document sticker, String query, Object parent, boolean clearsInputField, boolean notify, int scheduleDate);
+        void onStickerSelected(View view, TLRPC.Document sticker, String query, Object parent, boolean clearsInputField, boolean notify, int scheduleDate);
         boolean canSchedule();
         boolean isInScheduleMode();
     }
@@ -145,7 +145,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
             if (delegate == null) {
                 return;
             }
-            delegate.onStickerSelected(sticker, query, parent, clearsInputField, notify, scheduleDate);
+            delegate.onStickerSelected(null, sticker, query, parent, clearsInputField, notify, scheduleDate);
             dismiss();
         }
 
@@ -659,7 +659,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
         previewSendButton.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
         stickerPreviewLayout.addView(previewSendButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.LEFT));
         previewSendButton.setOnClickListener(v -> {
-            delegate.onStickerSelected(selectedSticker, null, stickerSet, clearsInputField, true, 0);
+            delegate.onStickerSelected(null, selectedSticker, null, stickerSet, clearsInputField, true, 0);
             dismiss();
         });
 

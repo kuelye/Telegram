@@ -5,6 +5,7 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
@@ -18,13 +19,15 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.animation.AnimationType;
 import org.telegram.messenger.animation.BaseChatAnimation;
-import org.telegram.messenger.animation.EmojiAnimation;
+import org.telegram.messenger.animation.EmojiOrStickerAnimation;
 import org.telegram.messenger.animation.Interpolator;
 import org.telegram.messenger.animation.TextAnimation;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.ChatActivityEnterView;
 import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.RecyclerListView;
+
+import java.util.Arrays;
 
 public class AnimatedChatMessageCell extends ChatMessageCell {
 
@@ -54,7 +57,6 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private int enterHeightDelta;
 
     private final SparseArray<Object[]> parameters = new SparseArray<>();
-    private final float[] rect = new float[4];
 
     private boolean isRealCellLayoutDone = false;
     private boolean isAnimationCorrected = true;
@@ -63,6 +65,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
     private boolean isCorrectionAnimationStarted = false;
     private boolean isCorrectionAnimationFinished = false;
     private boolean isAnimationDone = false;
+
+    private Rect startStickerRect;
+    private float[] currentPhotoCoords;
 
     public AnimatedChatMessageCell(Context context, MessageObject obj, BaseChatAnimation animation, int duration, Delegate delegate) {
         super(context);
@@ -91,6 +96,9 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        if (currentPhotoCoords != null) {
+            getPhotoImage().setImageCoords(currentPhotoCoords[0], currentPhotoCoords[1], currentPhotoCoords[2], currentPhotoCoords[3]);
+        }
         super.onDraw(canvas);
         checkAnimationStart();
     }
@@ -180,10 +188,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         editText.getLocationOnScreen(startEditLocation);
         Interpolator xInterpolator = globalAnimation.getXInterpolator();
         int startX = 0;
-        int endX = -startEditLocation[0];
-        if  (globalAnimation.getAnimationType() == AnimationType.SHORT_TEXT || globalAnimation.getAnimationType() == AnimationType.LONG_TEXT) {
-            endX += textX;
-        }
+        int endX = 0;
 
         // y
         Interpolator yInterpolator = globalAnimation.getYInterpolator();
@@ -197,10 +202,8 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         int startY = startEditLocation[1] - startOverlayLocation[1];
         int endY = getEndY();
         enterHeightDelta += delegate.getChatActivityEnterView().getMeasuredHeight() - editText.getHeight() - AndroidUtilities.dp(4); // height of blocks above edit
+        int endHeight = realCell.getMeasuredHeight();
         startY -= enterHeightDelta;
-        if  (globalAnimation.getAnimationType() == AnimationType.SHORT_TEXT || globalAnimation.getAnimationType() == AnimationType.LONG_TEXT) {
-            startY += editText.getBaseline() - getBottomBaseline();
-        }
 
         // time
         Interpolator timeInterpolator = globalAnimation.getTimeAppearsInterpolator();
@@ -209,7 +212,13 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         // reply
         int startReplyX = 0;
 
-        if (globalAnimation.getAnimationType() == AnimationType.SHORT_TEXT || globalAnimation.getAnimationType() == AnimationType.LONG_TEXT) {
+        if (globalAnimation.isText()) {
+            // x
+            endX = textX - startEditLocation[0];
+
+            // y
+            startY += editText.getBaseline() - getBottomBaseline();
+
             // bubble
             int backgroundDrawableRightOffset = backgroundWidth - backgroundDrawableRight + AndroidUtilities.dp(2);
             parameters.put(BUBBLE_BACKGROUND_WIDTH, new Integer[] {
@@ -236,19 +245,35 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
             // reply
             startReplyX = (int) (textX - forwardNameX);
-        } else if (globalAnimation.getAnimationType() == AnimationType.EMOJI) {
+        } else if (globalAnimation.isEmojiOrSticker()) {
             // emoji
             Paint paint = editText.getPaint();
             Paint.FontMetrics fontMetrics = paint.getFontMetrics();
-            float size = fontMetrics.bottom - fontMetrics.top + fontMetrics.leading + AndroidUtilities.dp(2);
-            Float[] startCoords = new Float[] {(float) startEditLocation[0], (float) editText.getBaseline() - size + fontMetrics.descent + AndroidUtilities.dp(1), size, size };
-            Float[] endCoords = new Float[] { getPhotoImage().getImageX(), getPhotoImage().getImageY(), getPhotoImage().getImageWidth(), getPhotoImage().getImageHeight() };
-            parameters.put(EMOJI_PHOTO_COORDS, new Float[][] { startCoords, endCoords });
+            int size = (int) (fontMetrics.bottom - fontMetrics.top + fontMetrics.leading + AndroidUtilities.dp(2));
+            Integer[] startCoords;
+            if (startStickerRect == null) {
+                startCoords = new Integer[] { startEditLocation[0], (int) (editText.getBaseline() - size + fontMetrics.descent + AndroidUtilities.dp(1)), size, size };
+            } else {
+                startCoords = new Integer[] { startStickerRect.left, startStickerRect.top - startY - startOverlayLocation[1], startStickerRect.width(), startStickerRect.height() };
+            }
+            Integer[] endCoords = new Integer[] { (int) getPhotoImage().getImageX(), (int) getPhotoImage().getImageY(), (int) getPhotoImage().getImageWidth(), (int) getPhotoImage().getImageHeight() };
+            parameters.put(EMOJI_PHOTO_COORDS, new Integer[][] { startCoords, endCoords });
+
+            // x
+            if (startStickerRect == null) {
+                endX = -startEditLocation[0];
+            } else {
+                endX = -startCoords[0];
+            }
             endX += endCoords[0];
-            endY += endCoords[3] - startCoords[3];
+
+            // y
+            if (startStickerRect == null) {
+                endY += endCoords[3] - startCoords[3];
+            }
 
             // reply
-            startReplyX = (int) (startCoords[0] - forwardNameX); // use startCords instead of textX, cause we have no text for emoji message
+            startReplyX = (int) (startCoords[0] - forwardNameX); // startCords used instead of textX cause we have no text for emoji message
         }
 
         // finishing
@@ -263,6 +288,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
         animator = ValueAnimator.ofFloat(0, 1);
         animator.setDuration(duration);
         animator.addUpdateListener(animation -> {
+            int minHeight = 0;
             float ratio = (float) animation.getAnimatedValue();
             int additionalOffsetY = 0;
 
@@ -271,7 +297,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
             int additionalOffsetX = 0;
             float replyInterpolation = 0;
-            if (globalAnimation.getAnimationType() == AnimationType.SHORT_TEXT || globalAnimation.getAnimationType() == AnimationType.LONG_TEXT) {
+            if (globalAnimation.isText()) {
                 // bubble
                 Interpolator bubbleInterpolator = ((TextAnimation) globalAnimation).getBubbleShapeInterpolator();
                 float bubbleInterpolation = bubbleInterpolator.getInterpolation(ratio);
@@ -291,14 +317,26 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
                 // reply
                 replyInterpolation = bubbleInterpolation;
-            } else if (globalAnimation.getAnimationType() == AnimationType.EMOJI) {
+            } else if (globalAnimation.isEmojiOrSticker()) {
                 // emoji
-                Interpolator emojiInterpolator = ((EmojiAnimation) globalAnimation).getEmojiScaleInterpolator();
+                Interpolator emojiInterpolator = ((EmojiOrStickerAnimation) globalAnimation).getEmojiScaleInterpolator();
                 float emojiInterpolation = emojiInterpolator.getInterpolation(ratio);
-                lerpFloats(EMOJI_PHOTO_COORDS, emojiInterpolation, rect);
-                additionalOffsetX = (int) (((Float[][]) parameters.get(EMOJI_PHOTO_COORDS))[0][0] - rect[0]);
-                additionalOffsetY = (int) (((Float[][]) parameters.get(EMOJI_PHOTO_COORDS))[0][3] - rect[3]);
-                getPhotoImage().setImageCoords(rect[0], rect[1], rect[2], rect[3]);
+                if (currentPhotoCoords == null) {
+                    currentPhotoCoords = new float[4];
+                }
+                lerpInts(EMOJI_PHOTO_COORDS, emojiInterpolation, currentPhotoCoords);
+                keyboardHeight = (int) (currentPhotoCoords[1] + currentPhotoCoords[3] - endHeight);
+                if (keyboardHeight > 0) {
+                    requestLayout();
+                }
+
+                // x
+                additionalOffsetX = (int) (((Integer[][]) parameters.get(EMOJI_PHOTO_COORDS))[0][0] - currentPhotoCoords[0]);
+
+                // y
+                if (startStickerRect != null) {
+                    additionalOffsetY = (int) (((Integer[][]) parameters.get(EMOJI_PHOTO_COORDS))[0][3] - currentPhotoCoords[3]);
+                }
 
                 // reply
                 replyInterpolation = emojiInterpolation;
@@ -307,7 +345,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             // x
             float xInterpolation = xInterpolator.getInterpolation(ratio);
             float animationOffsetX = additionalOffsetX + lerpInt(X, xInterpolation);
-            setAnimationOffsetX(animationOffsetX);
+//            setAnimationOffsetX(animationOffsetX);
 
             // y
             if (!isCorrectionAnimationStarted) {
@@ -326,7 +364,7 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
 
             // reply
             replyAnimationOffsetX = lerpInt(REPLY_OFFSET_X, replyInterpolation);
-            if (globalAnimation.getAnimationType() == AnimationType.EMOJI) {
+            if (globalAnimation.isEmojiOrSticker()) {
                 replyAnimationOffsetX -= animationOffsetX;
             }
             replyAnimationLineState = replyInterpolation;
@@ -358,6 +396,10 @@ public class AnimatedChatMessageCell extends ChatMessageCell {
             }
         });
         animator.start();
+    }
+
+    public void setStartStickerRect(Rect rect) {
+        this.startStickerRect = rect;
     }
 
     private void cancelAnimation() {

@@ -142,7 +142,7 @@ public class StickerEmojiCell extends FrameLayout {
 
     public void disable() {
         changingAlpha = true;
-        alpha = 0.5f;
+        alpha = 0f;
         time = 0;
         imageView.getImageReceiver().setAlpha(alpha);
         imageView.invalidate();

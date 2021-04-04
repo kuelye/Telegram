@@ -64,4 +64,20 @@ public abstract class BaseChatAnimation extends BaseAnimation {
     public Interpolator getTimeAppearsInterpolator() {
         return getInterpolator(TIME_APPEARS_INTERPOLATOR_ID);
     }
+
+    public boolean isText() {
+        return getAnimationType() == AnimationType.SHORT_TEXT || getAnimationType() == AnimationType.LONG_TEXT;
+    }
+
+    public boolean isEmojiOrSticker() {
+        return isEmoji() || isSticker();
+    }
+
+    public boolean isEmoji() {
+        return getAnimationType() == AnimationType.EMOJI;
+    }
+
+    public boolean isSticker() {
+        return getAnimationType() == AnimationType.STICKER;
+    }
 }

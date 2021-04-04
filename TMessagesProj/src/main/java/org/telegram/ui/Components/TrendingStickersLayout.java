@@ -387,7 +387,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
         if (delegate.canSendSticker()) {
             stickersAlertDelegate = new StickersAlert.StickersAlertDelegate() {
                 @Override
-                public void onStickerSelected(TLRPC.Document sticker, String query, Object parent, boolean clearsInputField, boolean notify, int scheduleDate) {
+                public void onStickerSelected(View view, TLRPC.Document sticker, String query, Object parent, boolean clearsInputField, boolean notify, int scheduleDate) {
                     delegate.onStickerSelected(sticker, parent, clearsInputField, notify, scheduleDate);
                 }
 

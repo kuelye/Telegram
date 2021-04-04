@@ -313,7 +313,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     protected int textY;
     private int totalHeight;
     private int additionalTimeOffsetY;
-    private int keyboardHeight;
+    protected int keyboardHeight;
     private int linkBlockNum;
     private int linkSelectionBlockNum;
 
@@ -10246,11 +10246,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         // TODO [CONTEST]
         Paint textPaint = new Paint();
         textPaint.setColor(Color.RED);
+        textPaint.setStyle(Paint.Style.STROKE);
+        textPaint.setStrokeWidth(2);
+        canvas.drawRect(1, 1, getWidth() - 2, getHeight() - 2, textPaint);
 //        canvas.drawLine(0, 1, getWidth(), 1, textPaint);
 //        int y = replyStartY;  // getBottomBaseline();
 //        canvas.drawLine(0, y, getWidth(), y, textPaint);
-        float x = forwardNameX;
-        canvas.drawLine(x, 0, x, getHeight(), textPaint);
+//        float x = forwardNameX;
+//        canvas.drawLine(x, 0, x, getHeight(), textPaint);
 //        if (getMessageObject() != null) {
 //            for (MessageObject.TextLayoutBlock block : currentMessageObject.textLayoutBlocks) {
 //                for (int i = 0; i < block.textLayout.getLineCount(); ++i) {

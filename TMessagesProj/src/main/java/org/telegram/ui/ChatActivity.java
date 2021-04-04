@@ -39,10 +39,6 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -247,6 +243,7 @@ import java.util.regex.Pattern;
 import static org.telegram.messenger.animation.AnimationType.EMOJI;
 import static org.telegram.messenger.animation.AnimationType.LONG_TEXT;
 import static org.telegram.messenger.animation.AnimationType.SHORT_TEXT;
+import static org.telegram.messenger.animation.AnimationType.STICKER;
 
 @SuppressWarnings("unchecked")
 public class ChatActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, DialogsActivity.DialogsActivityDelegate, LocationActivity.LocationActivityDelegate, ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate {
@@ -753,7 +750,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private boolean invalidateMessagesVisiblePart;
     private boolean scrollByTouch;
 
-    private SparseArray<AnimatedChatMessageCell> animatedCells = new SparseArray<>();
+    private final SparseArray<AnimatedChatMessageCell> animatedCells = new SparseArray<>();
+    private final LongSparseArray<Rect> stickerPositions = new LongSparseArray<>();
     private boolean isBackgroundAnimatedWhenChatOpened = false;
 
     public float getChatListViewPadding() {
@@ -2784,6 +2782,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         int h = heightSize - listViewTopHeight - (inPreviewMode && Build.VERSION.SDK_INT >= 21 ? AndroidUtilities.statusBarHeight : 0);
                         if (keyboardSize > AndroidUtilities.dp(20) && getLayoutParams().height < 0) {
                             h += keyboardSize;
+                            if (child == animatedMessagesOverlay) {
+                                h += keyboardSize;
+                            }
                         }
                         int contentHeightSpec = MeasureSpec.makeMeasureSpec(Math.max(AndroidUtilities.dp(10), h), MeasureSpec.EXACTLY);
                         child.measure(contentWidthSpec, contentHeightSpec);
@@ -6009,6 +6010,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
 
             @Override
+            public void onStickerSend(View view, TLRPC.Document sticker) {
+                int[] location = new int[2];
+                view.getLocationOnScreen(location);
+                stickerPositions.put(sticker.id, new Rect(location[0], location[1], location[0] + view.getMeasuredWidth(), location[1] + view.getMeasuredHeight()));
+            }
+
+            @Override
             public void onSwitchRecordMode(boolean video) {
                 showVoiceHint(false, video);
             }
@@ -6579,7 +6587,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         final ContentPreviewViewer.ContentPreviewViewerDelegate contentPreviewViewerDelegate = new ContentPreviewViewer.ContentPreviewViewerDelegate() {
             @Override
             public void sendSticker(TLRPC.Document sticker, String query, Object parent, boolean notify, int scheduleDate) {
-                chatActivityEnterView.onStickerSelected(sticker, query, parent, true, notify, scheduleDate);
+                chatActivityEnterView.onStickerSelected(null, sticker, query, parent, true, notify, scheduleDate);
             }
 
             @Override
@@ -7034,6 +7042,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         animatedMessagesOverlay = new FrameLayout(context);
         contentView.addView(animatedMessagesOverlay);
+
         contentView.addView(textSelectionHelper.getOverlayView(context));
         fireworksOverlay = new FireworksOverlay(context);
         contentView.addView(fireworksOverlay, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
@@ -15303,9 +15312,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 if (obj.isOut() && obj.wasJustSent) {
                     AnimationType animationType = null;
-                    Log.v("ChatActivity", "GUB processNewMessages: type=" + obj.type + ", linesCount=" + obj.linesCount);
+                    Log.v("ChatActivity", "GUB processNewMessages: type=" + obj.type + ", linesCount=" + obj.linesCount + ", ?=" + obj.isAnimatedEmoji() + ", " + obj.emojiAnimatedSticker);
                     if (obj.type == 15) {
-                        animationType = EMOJI;
+                        if (obj.isAnimatedEmoji()) {
+                            animationType = EMOJI;
+                        } else {
+                            animationType = STICKER;
+                        }
                     } else if (obj.type == 0) {
                         if (obj.linesCount > 1) {
                             animationType = LONG_TEXT;
@@ -23108,7 +23121,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         BaseChatAnimation animation = (BaseChatAnimation) AnimationController.getAnimation(animationType);
         int duration = getMoveAnimationDuration(animation.getDuration());
-//        Log.v("ChatActivity", "GUB animateEnterMessage: animationType=" + animationType + ", duration=" + duration);
         AnimatedChatMessageCell cell = new AnimatedChatMessageCell(getParentActivity(), message, animation, duration, new AnimatedChatMessageCell.Delegate() {
             @Override
             public void onAnimationStart(AnimatedChatMessageCell cell) {
@@ -23152,6 +23164,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 return getMoveAnimationDuration(220);
             }
         });
+        if (animationType == AnimationType.STICKER) {
+            cell.setStartStickerRect(message == null || message.getDocument() == null ? null : stickerPositions.get(message.getDocument().id));
+        }
         animatedCells.put(message.stableId, cell);
         animatedMessagesOverlay.addView(cell);
     }

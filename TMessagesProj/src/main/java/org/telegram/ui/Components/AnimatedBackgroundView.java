@@ -365,7 +365,7 @@ public class AnimatedBackgroundView extends View implements AnimationController.
         }
         Utilities.generateBackgroundBitmap(bitmap, points, colors);
 
-        Log.v("GUB", "generateBitmap: elapsed=" + (System.currentTimeMillis() - now) + "ms");
+//        Log.v("GUB", "generateBitmap: elapsed=" + (System.currentTimeMillis() - now) + "ms");
         return bitmap;
     }
 }

@@ -115,6 +115,7 @@ import org.telegram.ui.ActionBar.AdjustPanLayoutHelper;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Cells.StickerEmojiCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.GroupStickersActivity;
@@ -193,6 +194,10 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         }
 
         default void onTrendingStickersShowed(boolean show) {
+
+        }
+
+        default void onStickerSend(View view, TLRPC.Document sticker) {
 
         }
     }
@@ -6119,7 +6124,10 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     }
                     setStickersExpanded(false, true, false);
                 }
-                ChatActivityEnterView.this.onStickerSelected(sticker, query, parent, false, notify, scheduleDate);
+                if (view instanceof StickerEmojiCell) {
+                    view = ((StickerEmojiCell) view).getImageView();
+                }
+                ChatActivityEnterView.this.onStickerSelected(view, sticker, query, parent, false, notify, scheduleDate);
                 if ((int) dialog_id == 0 && MessageObject.isGifDocument(sticker)) {
                     accountInstance.getMessagesController().saveGif(parent, sticker);
                 }
@@ -6378,14 +6386,14 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 return stickersTabOpen && !(!stickersExpanded && messageEditText.length() > 0) && emojiView.areThereAnyStickers() && !waitingForKeyboardOpen;
             }
         });
-        sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 1);
+        sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 3);
         checkChannelRights();
     }
 
     @Override
-    public void onStickerSelected(TLRPC.Document sticker, String query, Object parent, boolean clearsInputField, boolean notify, int scheduleDate) {
+    public void onStickerSelected(View view, TLRPC.Document sticker, String query, Object parent, boolean clearsInputField, boolean notify, int scheduleDate) {
         if (isInScheduleMode() && scheduleDate == 0) {
-            AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), (n, s) -> onStickerSelected(sticker, query, parent, clearsInputField, n, s));
+            AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), (n, s) -> onStickerSelected(null, sticker, query, parent, clearsInputField, n, s));
         } else {
             if (slowModeTimer > 0 && !isInScheduleMode()) {
                 if (delegate != null) {
@@ -6399,6 +6407,8 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 emojiView.hideSearchKeyboard();
             }
             setStickersExpanded(false, true, false);
+
+            delegate.onStickerSend(view, sticker);
             SendMessagesHelper.getInstance(currentAccount).sendSticker(sticker, query, dialog_id, replyingMessageObject, getThreadMessage(), parent, notify, scheduleDate);
             if (delegate != null) {
                 delegate.onMessageSend(null, true, scheduleDate);
@@ -6454,7 +6464,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             int previusHeight = 0;
             if (contentType == 0) {
                 if (emojiView.getParent() == null) {
-                    sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 1);
+                    sizeNotifierLayout.addView(emojiView, sizeNotifierLayout.getChildCount() - 3);
                 }
                 samePannelWasVisible = emojiViewVisible && emojiView.getVisibility() == View.VISIBLE;
                 emojiView.setVisibility(VISIBLE);

@@ -2,12 +2,12 @@ package org.telegram.messenger.animation;
 
 import org.telegram.messenger.R;
 
-public class EmojiAnimation extends BaseChatAnimation {
+public class EmojiOrStickerAnimation extends BaseChatAnimation {
 
     public final static int EMOJI_SCALE_INTERPOLATOR_ID = 3;
 
-    protected EmojiAnimation() {
-        super(AnimationType.EMOJI, 4);
+    protected EmojiOrStickerAnimation(AnimationType animationType) {
+        super(animationType, 4);
     }
 
     @Override
